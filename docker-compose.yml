@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  makebot:
+    build: .
+    container_name: makebot-site
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    restart: unless-stopped
+    networks:
+      - makebot-network
+
+networks:
+  makebot-network:
+    driver: bridge
