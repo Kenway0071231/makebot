@@ -1,14 +1,16 @@
+cat > frontend/index.html << 'EOF'
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MakeBot | Создание чат-ботов, ИИ решений и сайтов</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
 </head>
 <body>
     <!-- Навигация -->
@@ -20,11 +22,10 @@
                     <span>MakeBot</span>
                 </a>
                 <div class="nav-links">
-                    <a href="#services">Услуги</a>
-                    <a href="#calculator">Калькулятор</a>
-                    <a href="#advantages">Преимущества</a>
-                    <a href="#process">Как работаем</a>
-                    <a href="#contact" class="btn-outline">Связаться</a>
+                    <a href="#services"><i class="fas fa-cogs"></i> Услуги</a>
+                    <a href="#advantages"><i class="fas fa-star"></i> Преимущества</a>
+                    <a href="#process"><i class="fas fa-play-circle"></i> Как работаем</a>
+                    <a href="#contact" class="btn-outline nav-contact-btn"><i class="fas fa-phone-alt"></i> Связаться</a>
                 </div>
                 <button class="mobile-menu-btn">
                     <i class="fas fa-bars"></i>
@@ -37,17 +38,14 @@
     <section class="hero">
         <div class="container">
             <div class="hero-content">
-                <h1 class="hero-title">Автоматизируйте бизнес с помощью <span class="highlight">ИИ-ботов</span> и решений</h1>
-                <p class="hero-subtitle">Разрабатываем интеллектуальные чат-боты, мини-приложения и сайты, которые увеличивают продажи и сокращают расходы на 70%</p>
-                <div class="hero-buttons">
-                    <a href="#calculator" class="btn-primary">
-                        <i class="fas fa-calculator"></i> Рассчитать стоимость
-                    </a>
-                    <a href="#contact" class="btn-secondary">
+                <h1 class="hero-title animate-on-scroll">Автоматизируйте бизнес с помощью <span class="highlight">ИИ-ботов</span></h1>
+                <p class="hero-subtitle animate-on-scroll" data-delay="0.2s">Разрабатываем интеллектуальные чат-боты, мини-приложения и сайты, которые увеличивают продажи и сокращают расходы на 70%</p>
+                <div class="hero-buttons animate-on-scroll" data-delay="0.4s">
+                    <a href="#contact" class="btn-primary">
                         <i class="fas fa-headset"></i> Бесплатная консультация
                     </a>
                 </div>
-                <div class="hero-stats">
+                <div class="hero-stats animate-on-scroll" data-delay="0.6s">
                     <div class="stat">
                         <div class="stat-number">7-14</div>
                         <div class="stat-text">дней на запуск</div>
@@ -58,63 +56,34 @@
                     </div>
                     <div class="stat">
                         <div class="stat-number">24/7</div>
-                        <div class="stat-text">работает без выходных</div>
+                        <div class="stat-text">работа ботов</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">100+</div>
+                        <div class="stat-text">успешных проектов</div>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
-
-    <!-- Калькулятор -->
-    <section id="calculator" class="calculator-section">
-        <div class="container">
-            <div class="section-header">
-                <h2>Рассчитайте стоимость вашего проекта</h2>
-                <p>Ответьте на 5 вопросов и получите ориентировочную стоимость разработки</p>
-            </div>
-            
-            <div class="calculator">
-                <div class="calculator-progress">
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progressFill"></div>
-                    </div>
-                    <div class="progress-text">Вопрос <span id="currentQuestion">1</span> из 5</div>
+            <div class="hero-visual">
+                <div class="visual-element animate-float" data-delay="0.1s">
+                    <i class="fas fa-comment-dots"></i>
+                    <span>Чат-боты</span>
                 </div>
-                
-                <div class="calculator-content">
-                    <div class="question-container" id="questionContainer">
-                        <!-- Вопросы загружаются динамически -->
-                    </div>
-                    
-                    <div class="calculator-result" id="resultContainer">
-                        <h3>Предварительный расчет</h3>
-                        <div class="result-summary">
-                            <div class="result-item">
-                                <span>Тип проекта:</span>
-                                <strong id="resultType">—</strong>
-                            </div>
-                            <div class="result-item">
-                                <span>Платформы:</span>
-                                <strong id="resultPlatforms">—</strong>
-                            </div>
-                            <div class="result-item">
-                                <span>Интеграции:</span>
-                                <strong id="resultIntegrations">—</strong>
-                            </div>
-                            <div class="result-item">
-                                <span>Сложность:</span>
-                                <strong id="resultComplexity">—</strong>
-                            </div>
-                        </div>
-                        <div class="result-price">
-                            <div class="price-label">Ориентировочная стоимость:</div>
-                            <div class="price-amount" id="priceAmount">от 45 000 ₽</div>
-                            <div class="price-note">Точная стоимость будет определена после консультации</div>
-                        </div>
-                        <button class="btn-primary" id="resetCalculator">
-                            <i class="fas fa-redo"></i> Рассчитать еще раз
-                        </button>
-                    </div>
+                <div class="visual-element animate-float" data-delay="0.2s">
+                    <i class="fas fa-brain"></i>
+                    <span>ИИ решения</span>
+                </div>
+                <div class="visual-element animate-float" data-delay="0.3s">
+                    <i class="fas fa-mobile-alt"></i>
+                    <span>Мини-приложения</span>
+                </div>
+                <div class="visual-element animate-float" data-delay="0.4s">
+                    <i class="fas fa-code"></i>
+                    <span>Сайты</span>
+                </div>
+                <div class="visual-element animate-float" data-delay="0.5s">
+                    <i class="fas fa-fire"></i>
+                    <span>MAX приложение</span>
                 </div>
             </div>
         </div>
@@ -124,62 +93,105 @@
     <section id="services" class="services-section">
         <div class="container">
             <div class="section-header">
-                <h2>Наши услуги</h2>
-                <p>Полный цикл разработки автоматизированных решений для вашего бизнеса</p>
+                <h2 class="animate-on-scroll"><i class="fas fa-concierge-bell"></i> Наши услуги</h2>
+                <p class="animate-on-scroll" data-delay="0.2s">Полный цикл разработки автоматизированных решений для вашего бизнеса</p>
             </div>
             
             <div class="services-grid">
-                <div class="service-card">
-                    <div class="service-icon">
+                <div class="service-card animate-on-scroll">
+                    <div class="service-icon" style="background: linear-gradient(135deg, #4361ee, #3a56d4);">
                         <i class="fas fa-comment-dots"></i>
                     </div>
                     <h3>Чат-боты</h3>
                     <p>Умные боты для мессенджеров и сайтов. Продают, консультируют, поддерживают клиентов 24/7.</p>
                     <ul class="service-features">
-                        <li>Telegram, WhatsApp, VK</li>
-                        <li>Интеграция с CRM</li>
-                        <li>Многоуровневое меню</li>
+                        <li><i class="fas fa-check"></i> Telegram, WhatsApp, VK</li>
+                        <li><i class="fas fa-check"></i> Интеграция с CRM</li>
+                        <li><i class="fas fa-check"></i> Многоуровневое меню</li>
+                        <li><i class="fas fa-check"></i> Автоматические ответы</li>
                     </ul>
+                    <div class="service-price">
+                        <span class="price-from">от 30 000 ₽</span>
+                        <span class="price-time">7-10 дней</span>
+                    </div>
                 </div>
                 
-                <div class="service-card">
-                    <div class="service-icon">
+                <div class="service-card animate-on-scroll" data-delay="0.1s">
+                    <div class="service-icon" style="background: linear-gradient(135deg, #7209b7, #560bad);">
                         <i class="fas fa-brain"></i>
                     </div>
                     <h3>ИИ-боты с нейросетями</h3>
                     <p>Продвинутые решения с искусственным интеллектом. Понимают контекст, обучаются на ваших данных.</p>
                     <ul class="service-features">
-                        <li>GPT-интеграция</li>
-                        <li>Анализ настроения</li>
-                        <li>Персонализация ответов</li>
+                        <li><i class="fas fa-check"></i> GPT-интеграция</li>
+                        <li><i class="fas fa-check"></i> Анализ настроения</li>
+                        <li><i class="fas fa-check"></i> Персонализация ответов</li>
+                        <li><i class="fas fa-check"></i> Обучение на базе знаний</li>
                     </ul>
+                    <div class="service-price">
+                        <span class="price-from">от 70 000 ₽</span>
+                        <span class="price-time">14-21 день</span>
+                    </div>
                 </div>
                 
-                <div class="service-card">
-                    <div class="service-icon">
+                <div class="service-card animate-on-scroll" data-delay="0.2s">
+                    <div class="service-icon" style="background: linear-gradient(135deg, #4cc9f0, #4895ef);">
                         <i class="fas fa-mobile-alt"></i>
                     </div>
                     <h3>Мини-приложения</h3>
                     <p>Легкие приложения внутри мессенджеров. Заказы, бронирования, каталоги без установки.</p>
                     <ul class="service-features">
-                        <li>VK Mini Apps</li>
-                        <li>Telegram Web Apps</li>
-                        <li>Быстрая загрузка</li>
+                        <li><i class="fas fa-check"></i> VK Mini Apps</li>
+                        <li><i class="fas fa-check"></i> Telegram Web Apps</li>
+                        <li><i class="fas fa-check"></i> Быстрая загрузка</li>
+                        <li><i class="fas fa-check"></i> Push-уведомления</li>
                     </ul>
+                    <div class="service-price">
+                        <span class="price-from">от 50 000 ₽</span>
+                        <span class="price-time">10-14 дней</span>
+                    </div>
                 </div>
                 
-                <div class="service-card">
-                    <div class="service-icon">
+                <div class="service-card animate-on-scroll" data-delay="0.3s">
+                    <div class="service-icon" style="background: linear-gradient(135deg, #f72585, #b5179e);">
+                        <i class="fas fa-fire"></i>
+                    </div>
+                    <h3>MAX приложение</h3>
+                    <p>Мощные приложения с полной автоматизацией. Боты, аналитика, интеграции в одном решении.</p>
+                    <ul class="service-features">
+                        <li><i class="fas fa-check"></i> Полная автоматизация</li>
+                        <li><i class="fas fa-check"></i> Интеграция ботов</li>
+                        <li><i class="fas fa-check"></i> Продвинутая аналитика</li>
+                        <li><i class="fas fa-check"></i> Кастомизация под бизнес</li>
+                    </ul>
+                    <div class="service-price">
+                        <span class="price-from">от 90 000 ₽</span>
+                        <span class="price-time">21-30 дней</span>
+                    </div>
+                </div>
+                
+                <div class="service-card animate-on-scroll" data-delay="0.4s">
+                    <div class="service-icon" style="background: linear-gradient(135deg, #38b000, #2d9100);">
                         <i class="fas fa-code"></i>
                     </div>
                     <h3>Разработка сайтов</h3>
                     <p>Современные сайты и лендинги. Адаптивный дизайн, высокая конверсия, SEO-оптимизация.</p>
                     <ul class="service-features">
-                        <li>Лендинги</li>
-                        <li>Корпоративные сайты</li>
-                        <li>Интернет-магазины</li>
+                        <li><i class="fas fa-check"></i> Лендинги</li>
+                        <li><i class="fas fa-check"></i> Корпоративные сайты</li>
+                        <li><i class="fas fa-check"></i> Интернет-магазины</li>
+                        <li><i class="fas fa-check"></i> Админ-панели</li>
                     </ul>
+                    <div class="service-price">
+                        <span class="price-from">от 40 000 ₽</span>
+                        <span class="price-time">7-14 дней</span>
+                    </div>
                 </div>
+            </div>
+            
+            <div class="services-note animate-on-scroll" data-delay="0.5s">
+                <i class="fas fa-lightbulb"></i>
+                <p>Нужен индивидуальный проект? Мы разработаем решение под ваши уникальные задачи!</p>
             </div>
         </div>
     </section>
@@ -188,33 +200,57 @@
     <section id="advantages" class="advantages-section">
         <div class="container">
             <div class="section-header">
-                <h2>Почему выбирают MakeBot</h2>
-                <p>Мы создаем решения, которые приносят реальную пользу бизнесу</p>
+                <h2 class="animate-on-scroll"><i class="fas fa-trophy"></i> Почему выбирают MakeBot</h2>
+                <p class="animate-on-scroll" data-delay="0.2s">Мы создаем решения, которые приносят реальную пользу бизнесу</p>
             </div>
             
             <div class="advantages-grid">
-                <div class="advantage-card">
-                    <div class="advantage-number">01</div>
+                <div class="advantage-card animate-on-scroll">
+                    <div class="advantage-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
                     <h3>Быстрый запуск</h3>
                     <p>Стандартные решения запускаем за 7 дней. Индивидуальная разработка — 2-4 недели.</p>
                 </div>
                 
-                <div class="advantage-card">
-                    <div class="advantage-number">02</div>
+                <div class="advantage-card animate-on-scroll" data-delay="0.1s">
+                    <div class="advantage-icon">
+                        <i class="fas fa-headset"></i>
+                    </div>
                     <h3>Техническая поддержка</h3>
                     <p>Гарантийная поддержка 3 месяца бесплатно. Помогаем с настройкой и обучением.</p>
                 </div>
                 
-                <div class="advantage-card">
-                    <div class="advantage-number">03</div>
+                <div class="advantage-card animate-on-scroll" data-delay="0.2s">
+                    <div class="advantage-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
                     <h3>Понятные тарифы</h3>
                     <p>Фиксированная стоимость в договоре. Без скрытых платежей и неожиданных доплат.</p>
                 </div>
                 
-                <div class="advantage-card">
-                    <div class="advantage-number">04</div>
-                    <h3>Интеграция с вашими системами</h3>
+                <div class="advantage-card animate-on-scroll" data-delay="0.3s">
+                    <div class="advantage-icon">
+                        <i class="fas fa-puzzle-piece"></i>
+                    </div>
+                    <h3>Интеграция</h3>
                     <p>Подключаем к CRM, API, 1C, AmoCRM, Битрикс24 и другим бизнес-инструментам.</p>
+                </div>
+                
+                <div class="advantage-card animate-on-scroll" data-delay="0.4s">
+                    <div class="advantage-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3>Гарантия качества</h3>
+                    <p>Тестируем на всех этапах разработки. Предоставляем гарантию на код.</p>
+                </div>
+                
+                <div class="advantage-card animate-on-scroll" data-delay="0.5s">
+                    <div class="advantage-icon">
+                        <i class="fas fa-file-contract"></i>
+                    </div>
+                    <h3>Прозрачный договор</h3>
+                    <p>Четкое ТЗ, поэтапная оплата, понятные сроки. Все официально.</p>
                 </div>
             </div>
         </div>
@@ -224,40 +260,74 @@
     <section id="process" class="process-section">
         <div class="container">
             <div class="section-header">
-                <h2>Как мы работаем</h2>
-                <p>Четкий процесс от заявки до запуска вашего проекта</p>
+                <h2 class="animate-on-scroll"><i class="fas fa-play-circle"></i> Как мы работаем</h2>
+                <p class="animate-on-scroll" data-delay="0.2s">Четкий процесс от заявки до запуска вашего проекта</p>
             </div>
             
             <div class="process-steps">
-                <div class="process-step">
-                    <div class="step-number">1</div>
+                <div class="process-step animate-on-scroll">
+                    <div class="step-number">01</div>
+                    <div class="step-icon">
+                        <i class="fas fa-comment-alt"></i>
+                    </div>
                     <div class="step-content">
                         <h3>Заявка и консультация</h3>
                         <p>Вы оставляете заявку, мы обсуждаем ваши задачи и предлагаем оптимальное решение.</p>
                     </div>
                 </div>
                 
-                <div class="process-step">
-                    <div class="step-number">2</div>
+                <div class="process-step animate-on-scroll" data-delay="0.1s">
+                    <div class="step-number">02</div>
+                    <div class="step-icon">
+                        <i class="fas fa-pen-ruler"></i>
+                    </div>
                     <div class="step-content">
-                        <h3>Проектирование и дизайн</h3>
-                        <p>Создаем прототип и дизайн будущего решения. Согласовываем с вами.</p>
+                        <h3>Проектирование</h3>
+                        <p>Создаем прототип, дизайн и техническое задание. Согласовываем с вами.</p>
                     </div>
                 </div>
                 
-                <div class="process-step">
-                    <div class="step-number">3</div>
+                <div class="process-step animate-on-scroll" data-delay="0.2s">
+                    <div class="step-number">03</div>
+                    <div class="step-icon">
+                        <i class="fas fa-code"></i>
+                    </div>
                     <div class="step-content">
                         <h3>Разработка</h3>
                         <p>Пишем код, настраиваем логику, интегрируем с вашими системами.</p>
                     </div>
                 </div>
                 
-                <div class="process-step">
-                    <div class="step-number">4</div>
+                <div class="process-step animate-on-scroll" data-delay="0.3s">
+                    <div class="step-number">04</div>
+                    <div class="step-icon">
+                        <i class="fas fa-vial"></i>
+                    </div>
                     <div class="step-content">
-                        <h3>Тестирование и запуск</h3>
-                        <p>Тестируем решение, обучаем вашу команду и запускаем проект.</p>
+                        <h3>Тестирование</h3>
+                        <p>Тестируем решение на всех этапах, исправляем ошибки, оптимизируем.</p>
+                    </div>
+                </div>
+                
+                <div class="process-step animate-on-scroll" data-delay="0.4s">
+                    <div class="step-number">05</div>
+                    <div class="step-icon">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <div class="step-content">
+                        <h3>Запуск</h3>
+                        <p>Размещаем на сервере, обучаем вашу команду, запускаем проект.</p>
+                    </div>
+                </div>
+                
+                <div class="process-step animate-on-scroll" data-delay="0.5s">
+                    <div class="step-number">06</div>
+                    <div class="step-icon">
+                        <i class="fas fa-hands-helping"></i>
+                    </div>
+                    <div class="step-content">
+                        <h3>Поддержка</h3>
+                        <p>Техническая поддержка 3 месяца, аналитика, доработки по необходимости.</p>
                     </div>
                 </div>
             </div>
@@ -268,70 +338,97 @@
     <section id="contact" class="contact-section">
         <div class="container">
             <div class="section-header">
-                <h2>Свяжитесь с нами</h2>
-                <p>Расскажите о вашем проекте, и мы подготовим индивидуальное предложение</p>
+                <h2 class="animate-on-scroll"><i class="fas fa-envelope"></i> Свяжитесь с нами</h2>
+                <p class="animate-on-scroll" data-delay="0.2s">Расскажите о вашем проекте, и мы подготовим индивидуальное предложение</p>
             </div>
             
             <div class="contact-content">
-                <div class="contact-form">
+                <div class="contact-form animate-on-scroll">
                     <form id="contactForm">
                         <div class="form-group">
-                            <label for="name">Ваше имя *</label>
-                            <input type="text" id="name" required>
+                            <label for="name"><i class="fas fa-user"></i> Ваше имя *</label>
+                            <input type="text" id="name" placeholder="Иван Иванов" required>
                         </div>
                         
                         <div class="form-group">
-                            <label for="phone">Телефон *</label>
-                            <input type="tel" id="phone" required>
+                            <label for="phone"><i class="fas fa-phone"></i> Телефон *</label>
+                            <div class="phone-input-wrapper">
+                                <span class="phone-prefix">+7</span>
+                                <input type="tel" id="phone" placeholder="(XXX) XXX-XX-XX" required pattern="^\(\d{3}\) \d{3}-\d{2}-\d{2}$" title="Формат: (XXX) XXX-XX-XX">
+                            </div>
                         </div>
                         
                         <div class="form-group">
-                            <label for="email">Email</label>
-                            <input type="email" id="email">
+                            <label for="message"><i class="fas fa-comment-alt"></i> Комментарий</label>
+                            <textarea id="message" rows="3" placeholder="Кратко опишите вашу задачу..."></textarea>
                         </div>
                         
-                        <div class="form-group">
-                            <label for="message">Опишите ваш проект</label>
-                            <textarea id="message" rows="4"></textarea>
+                        <div class="form-agreement">
+                            <input type="checkbox" id="privacyAgreement" required>
+                            <label for="privacyAgreement">
+                                Я соглашаюсь с <a href="#" class="privacy-link">обработкой персональных данных</a> *
+                            </label>
                         </div>
                         
-                        <button type="submit" class="btn-primary">
-                            <i class="fas fa-paper-plane"></i> Отправить заявку
-                        </button>
-                        <p class="form-note">Нажимая кнопку, вы соглашаетесь с обработкой персональных данных</p>
+                        <div class="form-footer">
+                            <button type="submit" class="btn-primary">
+                                <i class="fas fa-paper-plane"></i> Отправить заявку
+                            </button>
+                        </div>
                     </form>
                 </div>
                 
                 <div class="contact-info">
-                    <h3>Контактная информация</h3>
-                    <div class="info-item">
-                        <i class="fas fa-envelope"></i>
-                        <div>
-                            <strong>Email</strong>
-                            <p>info@makebot.ru</p>
+                    <div class="info-card animate-on-scroll" data-delay="0.2s">
+                        <h3><i class="fas fa-info-circle"></i> Контактная информация</h3>
+                        
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div class="info-content">
+                                <strong>Email</strong>
+                                <p>info@makebot.ru</p>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-phone"></i>
+                            </div>
+                            <div class="info-content">
+                                <strong>Телефон</strong>
+                                <p>+7 (XXX) XXX-XX-XX</p>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="info-content">
+                                <strong>Время работы</strong>
+                                <p>Пн-Пт: 9:00-18:00</p>
+                            </div>
                         </div>
                     </div>
                     
-                    <div class="info-item">
-                        <i class="fas fa-phone"></i>
-                        <div>
-                            <strong>Телефон</strong>
-                            <p>+7 (XXX) XXX-XX-XX</p>
+                    <div class="social-card animate-on-scroll" data-delay="0.3s">
+                        <h3><i class="fas fa-share-alt"></i> Мы в соцсетях</h3>
+                        <div class="social-links">
+                            <a href="#" class="social-link telegram">
+                                <i class="fab fa-telegram"></i>
+                                <span>Telegram</span>
+                            </a>
+                            <a href="#" class="social-link whatsapp">
+                                <i class="fab fa-whatsapp"></i>
+                                <span>WhatsApp</span>
+                            </a>
+                            <a href="#" class="social-link vk">
+                                <i class="fab fa-vk"></i>
+                                <span>ВКонтакте</span>
+                            </a>
                         </div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <i class="fas fa-clock"></i>
-                        <div>
-                            <strong>Время работы</strong>
-                            <p>Пн-Пт: 9:00-18:00</p>
-                        </div>
-                    </div>
-                    
-                    <div class="social-links">
-                        <a href="#" class="social-link"><i class="fab fa-telegram"></i></a>
-                        <a href="#" class="social-link"><i class="fab fa-whatsapp"></i></a>
-                        <a href="#" class="social-link"><i class="fab fa-vk"></i></a>
                     </div>
                 </div>
             </div>
@@ -342,29 +439,122 @@
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
-                <div class="footer-logo">
-                    <i class="fas fa-robot"></i>
-                    <span>MakeBot</span>
+                <div class="footer-main">
+                    <div class="footer-logo">
+                        <i class="fas fa-robot"></i>
+                        <div>
+                            <span class="logo-text">MakeBot</span>
+                            <span class="logo-slogan">Автоматизация бизнеса</span>
+                        </div>
+                    </div>
+                    <p class="footer-description">Разработка чат-ботов, ИИ решений и сайтов для бизнеса. Увеличиваем продажи и сокращаем расходы с помощью современных технологий.</p>
                 </div>
-                <p>Разработка чат-ботов, ИИ решений и сайтов для бизнеса</p>
-                <p class="copyright">© 2023 MakeBot. Все права защищены.</p>
+                
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4>Услуги</h4>
+                        <ul>
+                            <li><a href="#services">Чат-боты</a></li>
+                            <li><a href="#services">ИИ-боты</a></li>
+                            <li><a href="#services">Мини-приложения</a></li>
+                            <li><a href="#services">MAX приложения</a></li>
+                            <li><a href="#services">Разработка сайтов</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="footer-column">
+                        <h4>Компания</h4>
+                        <ul>
+                            <li><a href="#process">Как работаем</a></li>
+                            <li><a href="#advantages">Преимущества</a></li>
+                            <li><a href="#contact">Контакты</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="footer-column">
+                        <h4>Документы</h4>
+                        <ul>
+                            <li><a href="#" class="privacy-link-footer">Политика обработки персональных данных</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <div class="copyright">
+                    © 2026 MakeBot. Все права защищены.
+                </div>
+                <div class="footer-stats">
+                    <span><i class="fas fa-server"></i> Сервер: 93.77.179.64</span>
+                    <span><i class="fas fa-clock"></i> Обновлено: 02.02.2026</span>
+                </div>
             </div>
         </div>
     </footer>
 
-    <script src="js/calculator.js"></script>
-    <script>
-        // Мобильное меню
-        document.querySelector('.mobile-menu-btn').addEventListener('click', function() {
-            document.querySelector('.nav-links').classList.toggle('active');
-        });
-        
-        // Обработка формы
-        document.getElementById('contactForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            alert('Спасибо! Ваша заявка отправлена. Мы свяжемся с вами в ближайшее время.');
-            this.reset();
-        });
-    </script>
+    <!-- Модальное окно успеха -->
+    <div class="modal" id="successModal">
+        <div class="modal-content">
+            <div class="modal-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h3>Заявка отправлена!</h3>
+            <p>Спасибо за вашу заявку. Наш менеджер свяжется с вами в течение 30 минут.</p>
+            <button class="btn-primary" id="closeModal">OK</button>
+        </div>
+    </div>
+
+    <!-- Модальное окно политики -->
+    <div class="modal" id="privacyModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-shield-alt"></i> Политика обработки персональных данных</h3>
+                <button class="modal-close" id="closePrivacyModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="privacy-content">
+                    <h4>1. Общие положения</h4>
+                    <p>Настоящая политика обработки персональных данных составлена в соответствии с требованиями Федерального закона от 27.07.2006 №152-ФЗ «О персональных данных» и определяет порядок обработки персональных данных и меры по обеспечению безопасности персональных данных, предпринимаемые MakeBot (далее – Оператор).</p>
+                    
+                    <h4>2. Основные понятия, используемые в Политике</h4>
+                    <p>Автоматизированная обработка персональных данных – обработка персональных данных с помощью средств вычислительной техники.</p>
+                    <p>Блокирование персональных данных – временное прекращение обработки персональных данных (за исключением случаев, если обработка необходима для уточнения персональных данных).</p>
+                    
+                    <h4>3. Оператор может обрабатывать следующие персональные данные Пользователя</h4>
+                    <ul>
+                        <li>Фамилия, имя, отчество</li>
+                        <li>Номер телефона</li>
+                        <li>Адрес электронной почты</li>
+                        <li>Также на сайте происходит сбор и обработка обезличенных данных о посетителях (в т.ч. файлов «cookie») с помощью сервисов интернет-статистики</li>
+                    </ul>
+                    
+                    <h4>4. Цели обработки персональных данных</h4>
+                    <ul>
+                        <li>Предоставление доступа Пользователю к сервисам, информации и/или материалам, содержащимся на веб-сайте</li>
+                        <li>Заключение, исполнение и прекращение гражданско-правовых договоров</li>
+                        <li>Предоставление клиентской поддержки</li>
+                        <li>Обратная связь с Пользователем, в том числе направление уведомлений, запросов, касающихся использования Сайта, оказания услуг, обработка запросов и заявок от Пользователя</li>
+                    </ul>
+                    
+                    <h4>5. Правовые основания обработки персональных данных</h4>
+                    <p>Оператор обрабатывает персональные данные Пользователя только в случае их заполнения и/или отправки Пользователем самостоятельно через специальные формы, расположенные на сайте. Заполняя соответствующие формы и/или отправляя свои персональные данные Оператору, Пользователь выражает свое согласие с данной Политикой.</p>
+                    
+                    <h4>6. Порядок сбора, хранения, передачи и других видов обработки персональных данных</h4>
+                    <p>Безопасность персональных данных, которые обрабатываются Оператором, обеспечивается путем реализации правовых, организационных и технических мер, необходимых для выполнения в полном объеме требований действующего законодательства в области защиты персональных данных.</p>
+                    
+                    <h4>7. Заключительные положения</h4>
+                    <p>Пользователь может получить любые разъяснения по интересующим вопросам, касающимся обработки его персональных данных, обратившись к Оператору с помощью электронной почты info@makebot.ru.</p>
+                    <p>В данном документе будут отражены любые изменения политики обработки персональных данных Оператором. Политика действует бессрочно до замены ее новой версией.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary" id="acceptPrivacy">Принимаю</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Скрипты -->
+    <script src="js/main.js"></script>
 </body>
 </html>
+EOF
