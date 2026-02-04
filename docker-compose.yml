@@ -2,17 +2,27 @@ version: '3.8'
 
 services:
   makebot:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
     container_name: makebot-site
+    restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
       - PORT=3000
-    restart: unless-stopped
+      - TZ=Europe/Moscow
+    volumes:
+      - makebot_data:/app/data
     networks:
       - makebot-network
 
 networks:
   makebot-network:
     driver: bridge
+
+volumes:
+  makebot_data:
+    name: makebot_data
