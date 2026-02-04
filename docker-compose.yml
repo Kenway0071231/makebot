@@ -13,17 +13,11 @@ services:
       - NODE_ENV=production
       - PORT=3000
       - TZ=Europe/Moscow
-      # Переменные окружения можно задать здесь или в файле .env
-      - SMTP_HOST=${SMTP_HOST}
-      - SMTP_PORT=${SMTP_PORT}
-      - SMTP_USER=${SMTP_USER}
-      - SMTP_PASS=${SMTP_PASS}
-      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      # Telegram переменные
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
     volumes:
       - makebot_data:/app/data
-      # Для разработки можно монтировать исходный код
-      # - ./backend:/app
-      # - ./frontend:/app/../frontend
     networks:
       - makebot-network
     healthcheck:
