@@ -1,7 +1,6 @@
 /**
  * MakeBot Backend Server
  * Версия 2.1
- * ИСПРАВЛЕННАЯ ВЕРСИЯ
  */
 
 const express = require('express');
@@ -51,28 +50,31 @@ if (telegram.validateTelegramEnv()) {
 }
 
 // ============================================
-// НАСТРОЙКА MIDDLEWARE (ИСПРАВЛЕНО)
+// ПОДКЛЮЧЕНИЕ БИБЛИОТЕК
 // ============================================
-// Настройка CORS для разрешения запросов с фронтенда
 app.use(cors({
-    origin: '*', // Разрешаем все источники (в продакшене укажите конкретный домен)
-    methods: ['GET', 'POST', 'OPTIONS'],
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Обработка OPTIONS-запросов для CORS
-app.options('*', cors());
+// ВАЖНО: Правильный порядок middleware
+app.use(express.json({ 
+    limit: '10mb',
+    type: 'application/json'
+}));
+app.use(express.urlencoded({ 
+    extended: true,
+    limit: '10mb'
+}));
 
-// Парсинг JSON
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
-
-// Статические файлы
+// Статические файлы (ПЕРЕД маршрутами API)
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 // Логирование запросов
 app.use((req, res, next) => {
-    console.log(`${new Date().toISOString()} - ${req.method} ${req.url} - IP: ${req.ip}`);
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.url} - IP: ${req.ip} - Content-Type: ${req.headers['content-type']}`);
+    console.log('Body:', req.method === 'POST' ? JSON.stringify(req.body).substring(0, 200) + '...' : '');
     next();
 });
 
@@ -99,10 +101,22 @@ app.get('/api/info', (req, res) => {
     });
 });
 
-// Обработка заявок с калькулятора (ИСПРАВЛЕНО - добавлена обработка POST)
-app.post('/api/calculator/submit', async (req, res) => {
+// ВАЖНО: Специальный middleware для проверки JSON
+const validateJSON = (req, res, next) => {
+    if (req.method === 'POST' && req.headers['content-type'] !== 'application/json') {
+        console.warn('⚠️  Неправильный Content-Type:', req.headers['content-type']);
+        return res.status(415).json({
+            success: false,
+            message: 'Неподдерживаемый формат данных. Используйте application/json'
+        });
+    }
+    next();
+};
+
+// Обработка заявок с калькулятора
+app.post('/api/calculator/submit', validateJSON, async (req, res) => {
     try {
-        console.log('📝 Получена заявка с калькулятора:', req.body);
+        console.log('📝 Получена заявка с калькулятора:', JSON.stringify(req.body, null, 2));
         
         const { name, phone, email, comment, calculation } = req.body;
         
@@ -130,12 +144,7 @@ app.post('/api/calculator/submit', async (req, res) => {
         console.log('📊 Данные заявки сохранены, ID:', estimateData.id);
         
         // Сохраняем в файл
-        const dataDir = path.join(__dirname, 'data');
-        if (!fs.existsSync(dataDir)) {
-            fs.mkdirSync(dataDir, { recursive: true });
-        }
-        
-        const logPath = path.join(dataDir, 'calculator_requests.json');
+        const logPath = path.join(__dirname, 'data', 'calculator_requests.json');
         const requests = fs.existsSync(logPath) 
             ? JSON.parse(fs.readFileSync(logPath, 'utf8'))
             : [];
@@ -168,23 +177,26 @@ app.post('/api/calculator/submit', async (req, res) => {
                 name,
                 phone,
                 email: email || null,
-                telegramSent: telegramResult?.success || false
+                telegramSent: telegramResult?.success || false,
+                telegramMessage: telegramResult?.success ? 'Отправлено в Telegram' : 'Ошибка отправки в Telegram'
             }
         });
         
     } catch (error) {
         console.error('❌ Ошибка при обработке заявки с калькулятора:', error);
+        console.error('Stack:', error.stack);
         res.status(500).json({
             success: false,
-            message: 'Ошибка при обработке заявки. Пожалуйста, попробуйте еще раз.'
+            message: 'Ошибка при обработке заявки. Пожалуйста, попробуйте еще раз.',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 });
 
 // Обработка контактной формы
-app.post('/api/contact', async (req, res) => {
+app.post('/api/contact', validateJSON, async (req, res) => {
     try {
-        console.log('📝 Получена контактная заявка:', req.body);
+        console.log('📝 Получена контактная заявка:', JSON.stringify(req.body, null, 2));
         
         const { name, phone, message } = req.body;
         
@@ -211,12 +223,7 @@ app.post('/api/contact', async (req, res) => {
         console.log('📊 Данные контактной заявки сохранены, ID:', contactData.id);
         
         // Сохраняем в файл
-        const dataDir = path.join(__dirname, 'data');
-        if (!fs.existsSync(dataDir)) {
-            fs.mkdirSync(dataDir, { recursive: true });
-        }
-        
-        const logPath = path.join(dataDir, 'contact_requests.json');
+        const logPath = path.join(__dirname, 'data', 'contact_requests.json');
         const contacts = fs.existsSync(logPath) 
             ? JSON.parse(fs.readFileSync(logPath, 'utf8'))
             : [];
@@ -246,15 +253,76 @@ app.post('/api/contact', async (req, res) => {
                 contactId: contactData.id,
                 name,
                 phone,
-                telegramSent: telegramResult?.success || false
+                telegramSent: telegramResult?.success || false,
+                telegramMessage: telegramResult?.success ? 'Отправлено в Telegram' : 'Ошибка отправки в Telegram'
             }
         });
         
     } catch (error) {
         console.error('❌ Ошибка при обработке контактной формы:', error);
+        console.error('Stack:', error.stack);
         res.status(500).json({
             success: false,
-            message: 'Произошла ошибка при отправке заявки. Пожалуйста, попробуйте еще раз.'
+            message: 'Произошла ошибка при отправке заявки. Пожалуйста, попробуйте еще раз.',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+});
+
+// Тестовый endpoint для проверки
+app.get('/api/test/telegram', async (req, res) => {
+    try {
+        console.log('🔧 Тестирование Telegram...');
+        
+        if (!telegram.validateTelegramEnv()) {
+            return res.json({
+                success: false,
+                message: 'Telegram не настроен',
+                env: {
+                    botToken: process.env.TELEGRAM_BOT_TOKEN ? 'Есть' : 'Нет',
+                    chatId: process.env.TELEGRAM_CHAT_ID ? 'Есть' : 'Нет'
+                }
+            });
+        }
+        
+        const testData = {
+            id: Date.now(),
+            timestamp: new Date().toISOString(),
+            name: 'Тестовый пользователь',
+            phone: '+7 (999) 999-99-99',
+            ip: '127.0.0.1',
+            calculation: {
+                projectType: 'Тестовый проект',
+                platforms: 'Telegram',
+                integrations: 'CRM',
+                complexity: 'Средняя',
+                deadline: 'Стандартные сроки',
+                totalPrice: 10000,
+                minPrice: 8500,
+                maxPrice: 11500,
+                timeline: {
+                    planning: '3-5 дней',
+                    development: '7-14 дней',
+                    testing: '2-3 дня',
+                    total: '12-22 дня'
+                }
+            }
+        };
+        
+        const result = await telegram.sendCalculatorRequest(testData);
+        
+        res.json({
+            success: result.success,
+            message: result.success ? 'Тестовое сообщение отправлено в Telegram' : 'Ошибка отправки',
+            result: result
+        });
+        
+    } catch (error) {
+        console.error('❌ Ошибка тестирования Telegram:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Ошибка тестирования Telegram',
+            error: error.message
         });
     }
 });
@@ -318,7 +386,12 @@ app.get('/api/health', (req, res) => {
             uptime: process.uptime(),
             memory: process.memoryUsage(),
             telegram: telegram.validateTelegramEnv(),
-            env: missingEnvVars.length > 0 ? `⚠️ Missing: ${missingEnvVars.join(', ')}` : '✅ OK'
+            env: missingEnvVars.length > 0 ? `⚠️ Missing: ${missingEnvVars.join(', ')}` : '✅ OK',
+            endpoints: {
+                calculator: '/api/calculator/submit',
+                contact: '/api/contact',
+                test: '/api/test/telegram'
+            }
         }
     });
 });
@@ -329,20 +402,25 @@ app.get('/api/health', (req, res) => {
 
 // 404 - Not Found
 app.use((req, res) => {
-    res.status(404).json({
-        success: false,
-        message: 'Страница не найдена'
-    });
+    if (req.headers.accept && req.headers.accept.includes('application/json')) {
+        return res.status(404).json({
+            success: false,
+            message: 'API endpoint not found'
+        });
+    }
+    res.status(404).sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
 // Обработка ошибок
 app.use((err, req, res, next) => {
-    console.error('Ошибка сервера:', err);
+    console.error('❌ Ошибка сервера:', err);
+    console.error('Stack:', err.stack);
     
     res.status(500).json({
         success: false,
         message: 'Внутренняя ошибка сервера',
-        error: process.env.NODE_ENV === 'development' ? err.message : undefined
+        error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
 });
 
@@ -354,7 +432,6 @@ app.use((err, req, res, next) => {
 const dataDir = path.join(__dirname, 'data');
 if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
-    console.log('📁 Создана папка для данных:', dataDir);
 }
 
 // Инициализация файлов данных
@@ -371,17 +448,27 @@ dataFiles.forEach(file => {
     }
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`
     ========================================
     MakeBot Server v${config.version}
     ========================================
     🚀 Сервер запущен на порту: ${PORT}
-    🌐 Доступен по адресу: http://localhost:${PORT}
+    🌐 Доступен по адресу: http://0.0.0.0:${PORT}
     📧 Контакт: ${config.contact.email}
     📞 Телефон: ${config.contact.phone}
     📱 Telegram: ${telegram.validateTelegramEnv() ? '✅ Настроен' : '❌ Не настроен'}
     ${missingEnvVars.length > 0 ? `⚠️  Отсутствуют: ${missingEnvVars.join(', ')}` : '✅ Все переменные окружения настроены'}
     ========================================
     `);
+    
+    // Выводим доступные endpoint'ы
+    console.log('\n📡 Доступные API endpoints:');
+    console.log('   GET  /api/info           - информация о сервере');
+    console.log('   GET  /api/health         - проверка здоровья');
+    console.log('   GET  /api/stats          - статистика заявок');
+    console.log('   GET  /api/test/telegram  - тест Telegram отправки');
+    console.log('   POST /api/calculator/submit - отправка заявки с калькулятора');
+    console.log('   POST /api/contact        - отправка контактной формы');
+    console.log('   GET  /                   - главная страница сайта');
 });
