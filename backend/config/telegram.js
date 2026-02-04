@@ -97,6 +97,17 @@ async function sendToTelegram(message, type = 'calculator') {
         const botToken = process.env.TELEGRAM_BOT_TOKEN;
         const chatId = process.env.TELEGRAM_CHAT_ID;
         
+        // Проверка формата токена и chat_id
+        if (!botToken || botToken.length < 30) {
+            console.error('❌ Некорректный токен Telegram бота');
+            return { success: false, error: 'Некорректный токен Telegram бота' };
+        }
+        
+        if (!chatId || isNaN(parseInt(chatId))) {
+            console.error('❌ Некорректный Chat ID');
+            return { success: false, error: 'Некорректный Chat ID' };
+        }
+        
         // Обрезаем длинные сообщения (ограничение Telegram - 4096 символов)
         const maxLength = 4000;
         if (message.length > maxLength) {
@@ -105,7 +116,7 @@ async function sendToTelegram(message, type = 'calculator') {
         
         const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
         
-        console.log(`📤 Отправка сообщения в Telegram: ${url}`);
+        console.log(`📤 Отправка сообщения в Telegram: ${url.substring(0, 60)}...`);
         console.log(`📝 Chat ID: ${chatId}`);
         
         const response = await axios.post(url, {
@@ -114,7 +125,10 @@ async function sendToTelegram(message, type = 'calculator') {
             parse_mode: 'Markdown',
             disable_web_page_preview: true
         }, {
-            timeout: 10000 // 10 секунд таймаут
+            timeout: 10000, // 10 секунд таймаут
+            headers: {
+                'Content-Type': 'application/json'
+            }
         });
         
         console.log(`✅ Сообщение отправлено в Telegram: ${type} #${response.data.result.message_id}`);
@@ -125,8 +139,17 @@ async function sendToTelegram(message, type = 'calculator') {
         
         if (error.response) {
             console.error('Детали ошибки:', JSON.stringify(error.response.data, null, 2));
+            
+            // Проверка конкретных ошибок
+            if (error.response.data.description === 'Forbidden: bot was blocked by the user') {
+                console.error('❌ Бот заблокирован пользователем');
+            } else if (error.response.data.description === 'Bad Request: chat not found') {
+                console.error('❌ Чат не найден. Проверьте Chat ID');
+            } else if (error.response.data.description.includes('invalid token')) {
+                console.error('❌ Неверный токен бота');
+            }
         } else if (error.request) {
-            console.error('Нет ответа от сервера Telegram');
+            console.error('Нет ответа от сервера Telegram. Проверьте подключение к интернету');
         }
         
         return { 
