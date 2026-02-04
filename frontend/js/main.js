@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('📤 Отправка контактной формы:', formData);
                 
                 // Отправить на сервер (исправленный путь)
-                const response = await fetch('/api/contact', {
+                const response = await fetch('http://93.77.179.64:3000/api/contact', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
