@@ -425,7 +425,7 @@ app.use((err, req, res, next) => {
 });
 
 // ============================================
-// ЗАПУСК СЕРВЕРА
+// ЗАПУСК СЕРВЕРА (ИСПРАВЛЕННАЯ ВЕРСИЯ ДЛЯ CLOUD SHELL)
 // ============================================
 
 // Создаем папку для данных, если её нет
@@ -448,13 +448,18 @@ dataFiles.forEach(file => {
     }
 });
 
+// Используем порт 8080 для Cloud Shell
+const PORT = process.env.PORT || 8080;
+
 app.listen(PORT, '0.0.0.0', () => {
+    const cloudShellUrl = `https://${process.env.CLOUD_SHELL_ID || '8080'}-${PORT}.hosted.codelabs.site`;
+    
     console.log(`
     ========================================
     MakeBot Server v${config.version}
     ========================================
     🚀 Сервер запущен на порту: ${PORT}
-    🌐 Доступен по адресу: http://0.0.0.0:${PORT}
+    🌐 Cloud Shell URL: ${cloudShellUrl}
     📧 Контакт: ${config.contact.email}
     📞 Телефон: ${config.contact.phone}
     📱 Telegram: ${telegram.validateTelegramEnv() ? '✅ Настроен' : '❌ Не настроен'}
@@ -471,4 +476,7 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log('   POST /api/calculator/submit - отправка заявки с калькулятора');
     console.log('   POST /api/contact        - отправка контактной формы');
     console.log('   GET  /                   - главная страница сайта');
+    console.log('');
+    console.log('🔧 Пример команды для тестирования:');
+    console.log(`   curl -X POST ${cloudShellUrl}/api/health -H "Content-Type: application/json" -d '{}'`);
 });
