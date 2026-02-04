@@ -1,11 +1,10 @@
-cat > frontend/js/main.js << 'EOF'
 /**
  * MakeBot Основные скрипты
- * Версия 2.0
+ * Версия 1.1
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('MakeBot v2.0 loaded');
+    console.log('MakeBot v1.1 loaded');
     
     // ============================================
     // ИНИЦИАЛИЗАЦИЯ
@@ -16,7 +15,6 @@ document.addEventListener('DOMContentLoaded', function() {
     initFormValidation();
     initPrivacyModal();
     initPhoneMask();
-    initScrollAnimations();
     
     // ============================================
     // МОБИЛЬНОЕ МЕНЮ
@@ -63,6 +61,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Пропустить пустые ссылки и ссылки на другие страницы
                 if (href === '#' || href.includes('javascript')) return;
+                
+                // Пропустить ссылки на модальные окна
+                if (href.includes('Modal')) return;
                 
                 e.preventDefault();
                 
@@ -114,92 +115,67 @@ document.addEventListener('DOMContentLoaded', function() {
     // ============================================
     // АНИМАЦИИ ПРИ СКРОЛЛЕ
     // ============================================
-    function initScrollAnimations() {
-        const animateElements = document.querySelectorAll('.animate-on-scroll');
-        
-        if (animateElements.length === 0) return;
-        
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const delay = entry.target.getAttribute('data-delay') || 0;
-                    setTimeout(() => {
-                        entry.target.classList.add('animated');
-                    }, parseFloat(delay) * 1000);
-                    observer.unobserve(entry.target);
-                }
-            });
-        }, {
+    function initAnimations() {
+        // Анимация появления элементов
+        const observerOptions = {
             threshold: 0.1,
             rootMargin: '0px 0px -50px 0px'
+        };
+        
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+        
+        // Наблюдать за элементами для анимации
+        document.querySelectorAll('.animate-on-scroll').forEach(el => {
+            observer.observe(el);
         });
         
-        animateElements.forEach(el => observer.observe(el));
+        // Анимация счетчиков в статистике
+        animateCounters();
     }
     
-    // ============================================
-    // АНИМАЦИИ ПРИ ЗАГРУЗКЕ
-    // ============================================
-    function initAnimations() {
-        // Анимация визуальных элементов в герое
-        const visualElements = document.querySelectorAll('.visual-element');
-        visualElements.forEach((el, index) => {
-            const delay = el.getAttribute('data-delay') || (index * 0.1);
-            setTimeout(() => {
-                el.style.opacity = '1';
-                el.style.transform = 'translateY(0)';
-            }, parseFloat(delay) * 1000 + 1000); // +1s для задержки после загрузки
-        });
+    function animateCounters() {
+        const counters = document.querySelectorAll('.stat-number');
         
-        // Анимация плавающих элементов
-        const floatElements = document.querySelectorAll('.animate-float');
-        floatElements.forEach(el => {
-            const delay = el.getAttribute('data-delay') || 0;
-            setTimeout(() => {
-                el.style.animationDelay = `${delay}s`;
-                el.style.animationPlayState = 'running';
-            }, parseFloat(delay) * 1000);
-        });
-    }
-    
-    // ============================================
-    // МАСКА ТЕЛЕФОНА
-    // ============================================
-    function initPhoneMask() {
-        const phoneInput = document.getElementById('phone');
-        
-        if (!phoneInput) return;
-        
-        phoneInput.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
+        counters.forEach(counter => {
+            const target = counter.textContent;
+            // Проверяем, есть ли диапазон (например, "7-14")
+            if (target.includes('-')) {
+                return; // Пропускаем диапазоны
+            }
             
-            if (value.length > 0) {
-                value = value.substring(0, 10);
-                
-                let formatted = '';
-                if (value.length > 0) {
-                    formatted += '(' + value.substring(0, 3);
+            const targetNumber = parseInt(target);
+            if (isNaN(targetNumber)) return;
+            
+            const increment = targetNumber / 100;
+            let current = 0;
+            
+            const updateCounter = () => {
+                if (current < targetNumber) {
+                    current += increment;
+                    counter.textContent = Math.floor(current);
+                    setTimeout(updateCounter, 20);
+                } else {
+                    counter.textContent = targetNumber;
                 }
-                if (value.length >= 4) {
-                    formatted += ') ' + value.substring(3, 6);
-                }
-                if (value.length >= 7) {
-                    formatted += '-' + value.substring(6, 8);
-                }
-                if (value.length >= 9) {
-                    formatted += '-' + value.substring(8, 10);
-                }
-                
-                e.target.value = formatted;
-            } else {
-                e.target.value = '';
-            }
-        });
-        
-        phoneInput.addEventListener('blur', function(e) {
-            if (e.target.value === '(') {
-                e.target.value = '';
-            }
+            };
+            
+            // Запустить анимацию при появлении в viewport
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        updateCounter();
+                        observer.unobserve(entry.target);
+                    }
+                });
+            });
+            
+            observer.observe(counter);
         });
     }
     
@@ -207,27 +183,32 @@ document.addEventListener('DOMContentLoaded', function() {
     // ВАЛИДАЦИЯ ФОРМ
     // ============================================
     function initFormValidation() {
-        const contactForm = document.getElementById('contactForm');
+        const forms = document.querySelectorAll('form');
         
-        if (!contactForm) return;
-        
-        contactForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            if (validateForm(this)) {
-                submitForm(this);
-            }
-        });
-        
-        // Валидация в реальном времени
-        const inputs = contactForm.querySelectorAll('input[required], textarea[required]');
-        inputs.forEach(input => {
-            input.addEventListener('blur', function() {
-                validateField(this);
+        forms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                if (!validateForm(this)) {
+                    e.preventDefault();
+                } else {
+                    // Если форма контактная, показать модальное окно успеха
+                    if (form.id === 'contactForm') {
+                        e.preventDefault();
+                        showSuccessModal();
+                        form.reset();
+                    }
+                }
             });
             
-            input.addEventListener('input', function() {
-                clearFieldError(this);
+            // Валидация в реальном времени
+            const inputs = form.querySelectorAll('input[required], textarea[required], select[required]');
+            inputs.forEach(input => {
+                input.addEventListener('blur', function() {
+                    validateField(this);
+                });
+                
+                input.addEventListener('input', function() {
+                    clearFieldError(this);
+                });
             });
         });
     }
@@ -260,11 +241,17 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Проверка телефона
         if (field.type === 'tel' && field.value.trim()) {
-            const phoneRegex = /^\(\d{3}\) \d{3}-\d{2}-\d{2}$/;
+            const phoneRegex = /^\+7\s\(\d{3}\)\s\d{3}-\d{2}-\d{2}$/;
             if (!phoneRegex.test(field.value)) {
                 isValid = false;
-                message = 'Введите телефон в формате (XXX) XXX-XX-XX';
+                message = 'Введите телефон в формате: +7 (XXX) XXX-XX-XX';
             }
+        }
+        
+        // Проверка checkbox
+        if (field.type === 'checkbox' && !field.checked) {
+            isValid = false;
+            message = 'Необходимо согласие на обработку персональных данных';
         }
         
         // Если есть ошибка, показать её
@@ -306,66 +293,48 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    function submitForm(form) {
-        const submitBtn = form.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
+    // ============================================
+    // МАСКА ДЛЯ ТЕЛЕФОНА
+    // ============================================
+    function initPhoneMask() {
+        const phoneInput = document.getElementById('phone');
+        if (!phoneInput) return;
         
-        // Показать состояние загрузки
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Отправка...';
-        submitBtn.disabled = true;
-        
-        // Собрать данные формы
-        const formData = {
-            name: document.getElementById('name').value,
-            phone: '+7 ' + document.getElementById('phone').value,
-            message: document.getElementById('message').value,
-            timestamp: new Date().toISOString(),
-            page: window.location.href
-        };
-        
-        // Имитация отправки на сервер
-        setTimeout(() => {
-            // Показать модальное окно успеха
-            showSuccessModal();
+        phoneInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
             
-            // Сбросить форму
-            form.reset();
-            
-            // Восстановить кнопку
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-            
-            // Отправить данные в консоль (в реальном проекте здесь будет fetch на сервер)
-            console.log('Форма отправлена:', formData);
-            
-            // Можно также отправить данные на сервер:
-            // sendToServer(formData);
-            
-        }, 1500);
-    }
-    
-    function showSuccessModal() {
-        const modal = document.getElementById('successModal');
-        const closeBtn = document.getElementById('closeModal');
-        
-        modal.classList.add('active');
-        
-        closeBtn.addEventListener('click', function() {
-            modal.classList.remove('active');
-        }, { once: true });
-        
-        // Закрытие по клику вне модального окна
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) {
-                modal.classList.remove('active');
+            // Если начинается не с 7, добавляем +7
+            if (!value.startsWith('7') && value.length > 0) {
+                value = '7' + value;
             }
+            
+            // Ограничиваем длину
+            if (value.length > 11) {
+                value = value.substring(0, 11);
+            }
+            
+            // Форматируем
+            let formattedValue = '+7';
+            if (value.length > 1) {
+                formattedValue += ' (' + value.substring(1, 4);
+            }
+            if (value.length >= 4) {
+                formattedValue += ') ' + value.substring(4, 7);
+            }
+            if (value.length >= 7) {
+                formattedValue += '-' + value.substring(7, 9);
+            }
+            if (value.length >= 9) {
+                formattedValue += '-' + value.substring(9, 11);
+            }
+            
+            e.target.value = formattedValue;
         });
         
-        // Закрытие по ESC
-        document.addEventListener('keydown', function closeOnEsc(e) {
-            if (e.key === 'Escape') {
-                modal.classList.remove('active');
-                document.removeEventListener('keydown', closeOnEsc);
+        // При фокусе, если поле пустое, ставим +7
+        phoneInput.addEventListener('focus', function() {
+            if (!this.value) {
+                this.value = '+7 (';
             }
         });
     }
@@ -374,85 +343,97 @@ document.addEventListener('DOMContentLoaded', function() {
     // МОДАЛЬНОЕ ОКНО ПОЛИТИКИ
     // ============================================
     function initPrivacyModal() {
-        const privacyLinks = document.querySelectorAll('.privacy-link, .privacy-link-footer');
+        const privacyLinks = document.querySelectorAll('.privacy-link');
         const privacyModal = document.getElementById('privacyModal');
-        const closePrivacyBtn = document.getElementById('closePrivacyModal');
-        const acceptPrivacyBtn = document.getElementById('acceptPrivacy');
+        const closePrivacyModal = document.getElementById('closePrivacyModal');
+        const acceptPrivacyPolicy = document.getElementById('acceptPrivacyPolicy');
+        const privacyCheckbox = document.getElementById('privacyPolicy');
         
         if (!privacyModal) return;
         
-        // Открытие модалки
+        // Открытие модального окна
         privacyLinks.forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
-                openPrivacyModal();
+                privacyModal.classList.add('active');
+                document.body.style.overflow = 'hidden';
             });
         });
         
-        // Закрытие модалки
-        if (closePrivacyBtn) {
-            closePrivacyBtn.addEventListener('click', closePrivacyModal);
-        }
-        
-        if (acceptPrivacyBtn) {
-            acceptPrivacyBtn.addEventListener('click', function() {
-                // Отметить чекбокс в форме
-                const agreementCheckbox = document.getElementById('privacyAgreement');
-                if (agreementCheckbox) {
-                    agreementCheckbox.checked = true;
-                }
-                closePrivacyModal();
-            });
-        }
-        
-        // Закрытие по клику вне модалки
-        privacyModal.addEventListener('click', function(e) {
-            if (e.target === privacyModal) {
-                closePrivacyModal();
-            }
-        });
-        
-        // Закрытие по ESC
-        document.addEventListener('keydown', function closeOnEsc(e) {
-            if (e.key === 'Escape' && privacyModal.classList.contains('active')) {
-                closePrivacyModal();
-            }
-        });
-        
-        function openPrivacyModal() {
-            privacyModal.classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
-        
-        function closePrivacyModal() {
+        // Закрытие модального окна
+        function closeModal() {
             privacyModal.classList.remove('active');
             document.body.style.overflow = '';
         }
-    }
-    
-    // ============================================
-    // ОТПРАВКА НА СЕРВЕР (пример)
-    // ============================================
-    function sendToServer(data) {
-        fetch('/api/contact', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data)
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Success:', data);
-        })
-        .catch((error) => {
-            console.error('Error:', error);
+        
+        if (closePrivacyModal) {
+            closePrivacyModal.addEventListener('click', closeModal);
+        }
+        
+        if (acceptPrivacyPolicy) {
+            acceptPrivacyPolicy.addEventListener('click', function() {
+                if (privacyCheckbox) {
+                    privacyCheckbox.checked = true;
+                }
+                closeModal();
+            });
+        }
+        
+        // Закрытие по клику вне модального окна
+        privacyModal.addEventListener('click', function(e) {
+            if (e.target === privacyModal) {
+                closeModal();
+            }
+        });
+        
+        // Закрытие по Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && privacyModal.classList.contains('active')) {
+                closeModal();
+            }
         });
     }
     
     // ============================================
-    // ОБНОВЛЕНИЕ ГОДА В ФУТЕРЕ
+    // МОДАЛЬНОЕ ОКНО УСПЕХА
     // ============================================
+    function showSuccessModal() {
+        const modal = document.getElementById('successModal');
+        const closeBtn = document.getElementById('closeModal');
+        
+        if (!modal) return;
+        
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        
+        closeBtn.addEventListener('click', function() {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }, { once: true });
+        
+        // Закрытие по клику вне модального окна
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+        
+        // Закрытие по Escape
+        document.addEventListener('keydown', function closeOnEscape(e) {
+            if (e.key === 'Escape' && modal.classList.contains('active')) {
+                modal.classList.remove('active');
+                document.body.style.overflow = '';
+                document.removeEventListener('keydown', closeOnEscape);
+            }
+        });
+    }
+    
+    // ============================================
+    // ПРОЧИЕ ФУНКЦИОНАЛЬНОСТИ
+    // ============================================
+    
+    // Обновление года в футере
     function updateFooterYear() {
         const yearElement = document.querySelector('.copyright');
         if (yearElement) {
@@ -461,43 +442,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // ============================================
-    // СТАТИСТИКА ПОСЕЩЕНИЙ
-    // ============================================
+    // Инициализация счетчиков посещений (пример)
     function initVisitCounter() {
         let visits = localStorage.getItem('makebot_visits') || 0;
         visits = parseInt(visits) + 1;
         localStorage.setItem('makebot_visits', visits);
         
+        // Можно отображать где-нибудь
         console.log(`Посещений сайта: ${visits}`);
-    }
-    
-    // ============================================
-    // ОПТИМИЗАЦИЯ ИЗОБРАЖЕНИЙ
-    // ============================================
-    function initImageOptimization() {
-        // Ленивая загрузка изображений (если будут добавлены)
-        const images = document.querySelectorAll('img[data-src]');
-        
-        if ('IntersectionObserver' in window) {
-            const imageObserver = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const img = entry.target;
-                        img.src = img.dataset.src;
-                        img.classList.add('loaded');
-                        imageObserver.unobserve(img);
-                    }
-                });
-            });
-            
-            images.forEach(img => imageObserver.observe(img));
-        } else {
-            // Fallback для старых браузеров
-            images.forEach(img => {
-                img.src = img.dataset.src;
-            });
-        }
     }
     
     // ============================================
@@ -505,26 +457,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // ============================================
     updateFooterYear();
     initVisitCounter();
-    initImageOptimization();
     
     // Инициализация при полной загрузке страницы
     window.addEventListener('load', function() {
         document.body.classList.add('loaded');
         
-        // Показать анимированные элементы после загрузки
+        // Показываем элементы с задержкой для плавного появления
         setTimeout(() => {
-            const animatedElements = document.querySelectorAll('.animate-on-scroll:not([data-delay])');
-            animatedElements.forEach(el => {
-                el.classList.add('animated');
+            document.querySelectorAll('.animate-on-scroll').forEach(el => {
+                if (el.getBoundingClientRect().top < window.innerHeight) {
+                    el.classList.add('visible');
+                }
             });
-        }, 300);
-    });
-    
-    // Предотвращение контекстного меню на изображениях
-    document.addEventListener('contextmenu', function(e) {
-        if (e.target.tagName === 'IMG') {
-            e.preventDefault();
-        }
+        }, 100);
     });
 });
-EOF
