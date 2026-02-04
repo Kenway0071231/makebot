@@ -1,46 +1,23 @@
 {
   "name": "makebot-backend",
-  "version": "2.1.0",
-  "description": "Backend для сайта MakeBot - разработка чат-ботов, ИИ решений и сайтов",
+  "version": "2.2.0",
+  "description": "Backend для сайта MakeBot - только Email уведомления",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "setup": "mkdir -p data && echo '[]' > data/calculator_requests.json && echo '[]' > data/contact_requests.json",
-    "clean": "rm -rf data/*.json node_modules",
-    "docker:build": "docker build -t makebot .",
-    "docker:run": "docker run -p 3000:3000 makebot",
-    "env:check": "node -e \"const fs = require('fs'); if(!fs.existsSync('.env')) { console.log('⚠️  Файл .env отсутствует!'); console.log('   Скопируйте .env.example в .env и заполните настройки'); process.exit(1); } console.log('✅ Файл .env найден');\""
+    "setup": "mkdir -p data && echo '[]' > data/calculator_requests.json && echo '[]' > data/contact_requests.json"
   },
-  "keywords": [
-    "chatbot",
-    "ai",
-    "website",
-    "development",
-    "automation",
-    "telegram"
-  ],
+  "keywords": ["chatbot", "ai", "website", "development", "email"],
   "author": "MakeBot Team <support@makebot.shop>",
   "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "axios": "^1.6.2"
+    "nodemailer": "^6.9.7"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
-  },
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/makebot-team/makebot-site.git"
-  },
-  "bugs": {
-    "url": "https://github.com/makebot-team/makebot-site/issues"
-  },
-  "homepage": "https://makebot.shop"
+  }
 }
