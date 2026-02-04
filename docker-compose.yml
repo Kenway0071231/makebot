@@ -14,8 +14,15 @@ services:
     volumes:
       - ./backend/data:/app/data
       - ./frontend:/app/../frontend
+      - ./backend/.env:/app/.env
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/health', (r) => {if(r.statusCode === 200) process.exit(0); else process.exit(1);})"]
       interval: 30s
       timeout: 10s
       retries: 3
+    networks:
+      - makebot-network
+
+networks:
+  makebot-network:
+    driver: bridge
