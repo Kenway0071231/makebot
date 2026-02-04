@@ -1,28 +1,28 @@
 /**
- * MakeBot Калькулятор стоимости v2.0
- * С новой логикой расчета по мультипликаторам
+ * MakeBot Калькулятор стоимости v2.1
+ * Исправленная версия с рабочими переходами
  */
 
 document.addEventListener('DOMContentLoaded', function() {
     // ============================================
-    // КОНФИГУРАЦИЯ КАЛЬКУЛЯТОРА v2.0
+    // КОНФИГУРАЦИЯ КАЛЬКУЛЯТОРА v2.1
     // ============================================
     const calculatorConfig = {
-        version: '2.0.0',
+        version: '2.1.0',
         currentStep: 1,
         totalSteps: 5,
         answers: {},
         calculationData: {},
         
-        // Базовые цены (обновлены)
+        // Базовые цены
         basePrices: {
-            'simple-bot': 7500,      // Простой бот
-            'ai-bot': 12500,         // ИИ бот
-            'website': 15000,        // Простой сайт
-            'mini-app': 25000        // Мини-приложение (базовое)
+            'simple-bot': 7500,
+            'ai-bot': 12500,
+            'website': 15000,
+            'mini-app': 25000
         },
         
-        // Базовые сроки (обновлены)
+        // Базовые сроки
         baseTimes: {
             'simple-bot': '7-14',
             'ai-bot': '14-21',
@@ -443,7 +443,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================
-    // ОТОБРАЖЕНИЕ ВОПРОСОВ
+    // ОТОБРАЖЕНИЕ ВОПРОСОВ (ИСПРАВЛЕННАЯ ФУНКЦИЯ)
     // ============================================
     function showQuestion(step) {
         calculatorConfig.currentStep = step;
@@ -458,13 +458,22 @@ document.addEventListener('DOMContentLoaded', function() {
             if (projectType && calculatorConfig.question2Config[projectType]) {
                 question = calculatorConfig.question2Config[projectType];
             } else {
-                // Если тип проекта не выбран, возвращаемся к первому вопросу
+                // Если тип проекта не выбран, показываем сообщение
+                showNotification('Пожалуйста, выберите тип проекта на первом шаге', 'warning');
                 showQuestion(1);
                 return;
             }
         } else {
             // Вопросы 3, 4, 5
-            question = calculatorConfig.questions[step - 2]; // -2 потому что у нас динамический вопрос 2
+            // Корректный индекс для массива questions (учитываем что question2 динамический)
+            question = calculatorConfig.questions[step - 2];
+        }
+        
+        // Если вопрос не найден, показываем первый
+        if (!question) {
+            console.error('Вопрос не найден для шага', step);
+            question = calculatorConfig.questions[0];
+            calculatorConfig.currentStep = 1;
         }
         
         // Обновить прогресс
@@ -482,7 +491,17 @@ document.addEventListener('DOMContentLoaded', function() {
         elements.questionContainer.style.display = 'block';
         
         // Добавить обработчики
-        setupQuestionListeners(question);
+        setupQuestionListeners(question, step);
+        
+        // Анимация появления
+        setTimeout(() => {
+            const options = document.querySelectorAll('.option');
+            options.forEach((option, index) => {
+                setTimeout(() => {
+                    option.classList.add('visible');
+                }, index * 100);
+            });
+        }, 50);
     }
 
     function createQuestionHTML(question, step) {
@@ -496,11 +515,22 @@ document.addEventListener('DOMContentLoaded', function() {
             const isEssential = option.essential ? '<span class="option-badge essential">Важно</span>' : '';
             const badges = isPopular || isEssential ? `<div class="option-badges">${isPopular}${isEssential}</div>` : '';
             const description = option.description ? `<p class="option-description">${option.description}</p>` : '';
-            const priceLabel = option.basePrice ? 
-                `<div class="option-price">от ${formatPrice(option.basePrice)} ₽</div>` : 
-                (option.priceMultiplier !== 1 ? `<div class="option-price">×${option.priceMultiplier}</div>` : '');
-            const timeline = option.baseTime || option.timeline ? 
-                `<div class="option-timeline">${option.baseTime || option.timeline}</div>` : '';
+            
+            // Форматирование цены
+            let priceLabel = '';
+            if (option.basePrice) {
+                priceLabel = `<div class="option-price">от ${formatPrice(option.basePrice)} ₽</div>`;
+            } else if (option.priceMultiplier && option.priceMultiplier !== 1) {
+                priceLabel = `<div class="option-price">×${option.priceMultiplier.toFixed(1)}</div>`;
+            }
+            
+            // Форматирование времени
+            let timeline = '';
+            if (option.baseTime) {
+                timeline = `<div class="option-timeline">${option.baseTime}</div>`;
+            } else if (option.timeline) {
+                timeline = `<div class="option-timeline">${option.timeline}</div>`;
+            }
             
             optionsHTML += `
                 <div class="option animate-on-scroll" 
@@ -604,14 +634,14 @@ document.addEventListener('DOMContentLoaded', function() {
         // Активировать кнопку "Далее"
         const nextBtn = document.querySelector('.next-btn, .calculate-btn');
         if (nextBtn) {
-            nextBtn.disabled = false;
+            nextBtn.disabled = !calculatorConfig.answers[question.key];
         }
     }
 
     // ============================================
-    // НАСТРОЙКА ОБРАБОТЧИКОВ ВОПРОСОВ
+    // НАСТРОЙКА ОБРАБОТЧИКОВ ВОПРОСОВ (ИСПРАВЛЕННАЯ)
     // ============================================
-    function setupQuestionListeners(question) {
+    function setupQuestionListeners(question, step) {
         const options = document.querySelectorAll('.option');
         const nextBtn = document.querySelector('.next-btn, .calculate-btn');
         const prevBtn = document.querySelector('.prev-btn');
@@ -898,7 +928,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================
-    // ОТПРАВКА ФОРМЫ КАЛЬКУЛЯТОРА
+    // ОТПРАВКА ФОРМЫ КАЛЬКУЛЯТОРА (ИСПРАВЛЕННАЯ)
     // ============================================
     function setupCalculatorFormListener() {
         if (!elements.calculatorContactForm) return;
@@ -940,7 +970,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if (result.success) {
                     // Показать успешное сообщение
-                    showSuccessModal('Спасибо! Ваша заявка отправлена. Мы отправили детальный расчет на вашу почту и свяжемся с вами в течение 30 минут для обсуждения проекта.');
+                    showSuccessModal('Спасибо! Ваша заявка отправлена. Мы свяжемся с вами в ближайшее время.');
                     
                     // Сбросить форму
                     elements.calculatorContactForm.reset();
@@ -995,7 +1025,7 @@ document.addEventListener('DOMContentLoaded', function() {
             isValid = false;
         }
         
-        // Валидация согласия
+        // Валидация согласия (ДОБАВЛЕНА ПРОВЕРКА ЧЕКБОКСА)
         if (!privacy.checked) {
             showNotification('Необходимо согласие на обработку персональных данных', 'warning');
             isValid = false;
@@ -1192,12 +1222,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function sendAnalytics(event, data) {
-        // В реальном проекте здесь будет отправка в Google Analytics или другой сервис
         console.log('Analytics:', {
             event: event,
             data: {
                 ...data,
-                calculation: data.calculation ? '...' : null // Скрываем детали расчета в логах
+                calculation: data.calculation ? '...' : null
             }
         });
     }
