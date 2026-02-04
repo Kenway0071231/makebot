@@ -1,6 +1,6 @@
 /**
  * MakeBot Backend Server
- * Версия 2.2.0 (с исправленной отправкой email)
+ * Версия 2.2 (без Telegram) - ИСПРАВЛЕННЫЙ
  */
 
 const express = require('express');
@@ -27,25 +27,44 @@ const config = {
 };
 
 // ============================================
-// НАСТРОЙКА ПОЧТЫ
+// НАСТРОЙКА ПОЧТЫ (ИСПРАВЛЕННЫЙ)
 // ============================================
 function createEmailTransporter() {
     try {
-        console.log('🔧 Настройка SMTP...');
-        console.log('SMTP_HOST:', process.env.SMTP_HOST || 'smtp.yandex.ru');
-        console.log('SMTP_USER:', process.env.SMTP_USER || 'support@makebot.store');
-        console.log('ADMIN_EMAIL:', process.env.ADMIN_EMAIL || 'Denis.Kenway@yandex.ru');
+        console.log('🔧 Настройка SMTP транспортера...');
+        console.log('   Хост:', process.env.SMTP_HOST);
+        console.log('   Порт:', process.env.SMTP_PORT);
+        console.log('   Пользователь:', process.env.SMTP_USER);
+        console.log('   Админ email:', process.env.ADMIN_EMAIL);
         
+        // Проверяем наличие всех необходимых переменных
+        if (!process.env.SMTP_USER || !process.env.SMTP_PASS || !process.env.ADMIN_EMAIL) {
+            console.error('❌ Не все SMTP переменные окружения установлены');
+            console.error('   SMTP_USER:', !!process.env.SMTP_USER);
+            console.error('   SMTP_PASS:', !!process.env.SMTP_PASS);
+            console.error('   ADMIN_EMAIL:', !!process.env.ADMIN_EMAIL);
+            return null;
+        }
+
         const transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST || 'smtp.yandex.ru',
+            host: process.env.SMTP_HOST || 'smtp.mail.ru',
             port: parseInt(process.env.SMTP_PORT) || 465,
             secure: true,
             auth: {
-                user: process.env.SMTP_USER || 'support@makebot.store',
-                pass: process.env.SMTP_PASS || 'Deniska040406'
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASS
             },
             tls: {
                 rejectUnauthorized: false
+            }
+        });
+        
+        // Проверяем подключение
+        transporter.verify(function(error, success) {
+            if (error) {
+                console.error('❌ Ошибка проверки SMTP подключения:', error.message);
+            } else {
+                console.log('✅ SMTP сервер готов принимать письма');
             }
         });
         
@@ -266,7 +285,7 @@ function generateContactEmail(data) {
     `;
 }
 
-// Отправка email
+// Отправка email (ИСПРАВЛЕННАЯ)
 async function sendEmail(subject, html, text) {
     if (!emailTransporter) {
         console.warn('⚠️ SMTP транспортер не настроен, письмо не отправлено');
@@ -274,21 +293,22 @@ async function sendEmail(subject, html, text) {
     }
     
     try {
+        console.log('📤 Отправка письма...');
+        console.log('   От:', process.env.SMTP_USER);
+        console.log('   Кому:', process.env.ADMIN_EMAIL);
+        console.log('   Тема:', subject);
+        
         const mailOptions = {
-            from: process.env.SMTP_USER || 'support@makebot.store',
-            to: process.env.ADMIN_EMAIL || 'Denis.Kenway@yandex.ru',
+            from: `"MakeBot" <${process.env.SMTP_USER}>`,
+            to: process.env.ADMIN_EMAIL,
             subject: subject,
             html: html,
             text: text || html.replace(/<[^>]*>/g, '')
         };
         
-        console.log('📤 Отправка письма...');
-        console.log('От кого:', mailOptions.from);
-        console.log('Кому:', mailOptions.to);
-        console.log('Тема:', mailOptions.subject);
-        
         const info = await emailTransporter.sendMail(mailOptions);
         console.log(`✅ Письмо отправлено: ${info.messageId}`);
+        console.log(`   Ответ сервера: ${info.response}`);
         
         return { 
             success: true, 
@@ -298,23 +318,25 @@ async function sendEmail(subject, html, text) {
         
     } catch (error) {
         console.error('❌ Ошибка отправки письма:', error.message);
-        console.error('Детали ошибки:', error);
+        console.error('   Код ошибки:', error.code);
+        console.error('   Команда:', error.command);
         return { 
             success: false, 
-            error: error.message
+            error: error.message,
+            code: error.code
         };
     }
 }
 
 // ============================================
-// ПРОВЕРКА ПЕРЕМЕННЫХ ОКРУЖЕНИЯ
+// ПРОВЕРКА ПЕРЕМЕННЫХ ОКРУЖЕНИЯ (ИСПРАВЛЕННАЯ)
 // ============================================
 const requiredEnvVars = ['SMTP_USER', 'SMTP_PASS', 'ADMIN_EMAIL'];
 const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
 if (missingEnvVars.length > 0) {
-    console.warn('⚠️  Внимание: отсутствуют переменные окружения:', missingEnvVars);
-    console.warn('   Отредактируйте файл .env');
+    console.warn('⚠️  ВНИМАНИЕ: отсутствуют переменные окружения:', missingEnvVars);
+    console.warn('   Отредактируйте файл .env в папке backend/');
 } else {
     console.log('✅ Все переменные окружения найдены');
 }
@@ -371,7 +393,7 @@ app.get('/api/info', (req, res) => {
 
 // Валидация JSON
 const validateJSON = (req, res, next) => {
-    if (req.method === 'POST' && req.headers['content-type'] && !req.headers['content-type'].includes('application/json')) {
+    if (req.method === 'POST' && req.headers['content-type'] !== 'application/json') {
         console.warn('⚠️  Неправильный Content-Type:', req.headers['content-type']);
         return res.status(415).json({
             success: false,
@@ -381,11 +403,10 @@ const validateJSON = (req, res, next) => {
     next();
 };
 
-// Обработка заявок с калькулятора
+// Обработка заявок с калькулятора (ИСПРАВЛЕННАЯ)
 app.post('/api/calculator/submit', validateJSON, async (req, res) => {
     try {
         console.log('📝 Получена заявка с калькулятора');
-        console.log('Данные:', JSON.stringify(req.body));
         
         const { name, phone, email, comment, calculation } = req.body;
         
@@ -426,7 +447,7 @@ app.post('/api/calculator/submit', validateJSON, async (req, res) => {
         try {
             console.log('📤 Попытка отправки email...');
             const html = generateCalculatorEmail(estimateData);
-            const text = `Новая заявка с калькулятора\nИмя: ${name}\nТелефон: ${phone}\nEmail: ${email || 'Не указан'}`;
+            const text = `Новая заявка с калькулятора\nИмя: ${name}\nТелефон: ${phone}\nEmail: ${email || 'Не указан'}\nПроект: ${calculation.projectType}`;
             
             emailResult = await sendEmail(`🚀 Новая заявка с калькулятора #${estimateData.id}`, html, text);
             
@@ -457,16 +478,15 @@ app.post('/api/calculator/submit', validateJSON, async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Ошибка при обработке заявки. Пожалуйста, попробуйте еще раз.',
-            error: error.message
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 });
 
-// Обработка контактной формы
+// Обработка контактной формы (ИСПРАВЛЕННАЯ)
 app.post('/api/contact', validateJSON, async (req, res) => {
     try {
         console.log('📝 Получена контактная заявка');
-        console.log('Данные:', JSON.stringify(req.body));
         
         const { name, phone, message } = req.body;
         
@@ -535,7 +555,7 @@ app.post('/api/contact', validateJSON, async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Произошла ошибка при отправке заявки. Пожалуйста, попробуйте еще раз.',
-            error: error.message
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 });
@@ -556,23 +576,20 @@ app.get('/api/test/email', async (req, res) => {
             });
         }
         
-        const testData = {
-            id: Date.now(),
-            timestamp: new Date().toISOString(),
-            name: 'Тестовый пользователь',
-            phone: '+7 (999) 999-99-99',
-            email: 'test@example.com',
-            ip: '127.0.0.1'
-        };
-        
         const html = `
             <h1>Тестовое письмо от MakeBot</h1>
-            <p>Это тестовое письмо от сервера MakeBot v${config.version}.</p>
-            <p>Время отправки: ${new Date().toLocaleString('ru-RU')}</p>
-            <p>Если вы видите это письмо, значит email отправка настроена правильно!</p>
+            <p>Это тестовое письмо отправлено ${new Date().toLocaleString('ru-RU')}</p>
+            <p>Если вы получили это письмо, значит SMTP настроен правильно.</p>
+            <p><strong>Настройки SMTP:</strong></p>
+            <ul>
+                <li>Хост: ${process.env.SMTP_HOST}</li>
+                <li>Порт: ${process.env.SMTP_PORT}</li>
+                <li>Пользователь: ${process.env.SMTP_USER}</li>
+                <li>Получатель: ${process.env.ADMIN_EMAIL}</li>
+            </ul>
         `;
         
-        const result = await sendEmail('🔧 Тестовое письмо от MakeBot', html, 'Тестовое письмо');
+        const result = await sendEmail('🔧 Тестовое письмо от MakeBot', html, 'Тестовое письмо от MakeBot');
         
         res.json({
             success: result.success,
@@ -680,7 +697,7 @@ app.use((err, req, res, next) => {
     res.status(500).json({
         success: false,
         message: 'Внутренняя ошибка сервера',
-        error: err.message
+        error: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
 });
 
@@ -711,7 +728,7 @@ dataFiles.forEach(file => {
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`
     ========================================
-    MakeBot Server v${config.version} (с исправленной отправкой email)
+    MakeBot Server v${config.version}
     ========================================
     🚀 Сервер запущен на порту: ${PORT}
     🌐 Доступен по адресу: http://0.0.0.0:${PORT}
@@ -731,11 +748,4 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log('   POST /api/calculator/submit - отправка заявки с калькулятора');
     console.log('   POST /api/contact        - отправка контактной формы');
     console.log('   GET  /                   - главная страница сайта');
-    
-    // Предупреждение о настройках email
-    if (!emailTransporter) {
-        console.log('\n⚠️  ВНИМАНИЕ: Email не настроен!');
-        console.log('   Заявки не будут приходить на почту.');
-        console.log('   Проверьте настройки SMTP в файле .env');
-    }
 });
