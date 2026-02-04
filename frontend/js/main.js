@@ -1,10 +1,10 @@
 /**
  * MakeBot Основные скрипты
- * Версия 1.1
+ * Версия 1.2
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('MakeBot v1.1 loaded');
+    console.log('MakeBot v1.2 loaded');
     
     // ============================================
     // ИНИЦИАЛИЗАЦИЯ
@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         counters.forEach(counter => {
             const target = counter.textContent;
-            // Проверяем, есть ли диапазон (например, "7-14")
+            // Проверяем, есть ли диапазон (например, "3-7")
             if (target.includes('-')) {
                 return; // Пропускаем диапазоны
             }
@@ -180,48 +180,115 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // ============================================
-    // ВАЛИДАЦИЯ ФОРМ
+    // ВАЛИДАЦИЯ КОНТАКТНОЙ ФОРМЫ
     // ============================================
     function initFormValidation() {
-        const forms = document.querySelectorAll('form');
+        const contactForm = document.getElementById('contactForm');
         
-        forms.forEach(form => {
-            form.addEventListener('submit', function(e) {
-                if (!validateForm(this)) {
-                    e.preventDefault();
-                } else {
-                    // Если форма контактная, показать модальное окно успеха
-                    if (form.id === 'contactForm') {
-                        e.preventDefault();
-                        showSuccessModal();
-                        form.reset();
-                    }
-                }
-            });
+        if (!contactForm) return;
+        
+        contactForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
             
-            // Валидация в реальном времени
-            const inputs = form.querySelectorAll('input[required], textarea[required], select[required]');
-            inputs.forEach(input => {
-                input.addEventListener('blur', function() {
-                    validateField(this);
+            if (!validateContactForm()) {
+                return;
+            }
+            
+            // Показать индикатор загрузки
+            const submitBtn = contactForm.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Отправка...';
+            submitBtn.disabled = true;
+            
+            try {
+                // Собрать данные формы
+                const formData = {
+                    name: document.getElementById('name').value.trim(),
+                    phone: document.getElementById('phone').value.trim(),
+                    message: document.getElementById('message').value.trim() || null
+                };
+                
+                // Отправить на сервер
+                const response = await fetch('/api/contact', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
                 });
                 
-                input.addEventListener('input', function() {
-                    clearFieldError(this);
-                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Показать успешное сообщение
+                    showSuccessModal('Спасибо! Ваша заявка отправлена. Наш менеджер свяжется с вами в течение 30 минут.');
+                    
+                    // Сбросить форму
+                    contactForm.reset();
+                    
+                    // Отправить аналитику
+                    sendAnalytics('contact_form_submitted', formData);
+                    
+                } else {
+                    throw new Error(result.message || 'Ошибка при отправке формы');
+                }
+                
+            } catch (error) {
+                console.error('Ошибка отправки формы:', error);
+                showNotification('Ошибка при отправке формы. Пожалуйста, попробуйте еще раз или свяжитесь с нами напрямую.', 'warning');
+            } finally {
+                // Восстановить кнопку
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+        
+        // Валидация в реальном времени
+        const inputs = contactForm.querySelectorAll('input[required], textarea');
+        inputs.forEach(input => {
+            input.addEventListener('blur', function() {
+                validateField(this);
+            });
+            
+            input.addEventListener('input', function() {
+                clearFieldError(this);
             });
         });
     }
     
-    function validateForm(form) {
-        let isValid = true;
-        const requiredFields = form.querySelectorAll('[required]');
+    function validateContactForm() {
+        const form = document.getElementById('contactForm');
+        const name = document.getElementById('name');
+        const phone = document.getElementById('phone');
+        const privacy = document.getElementById('privacyPolicy');
         
-        requiredFields.forEach(field => {
-            if (!validateField(field)) {
-                isValid = false;
-            }
-        });
+        let isValid = true;
+        
+        // Очистить предыдущие ошибки
+        clearFieldError(name);
+        clearFieldError(phone);
+        
+        // Валидация имени
+        if (!name.value.trim()) {
+            showFieldError(name, 'Введите ваше имя');
+            isValid = false;
+        }
+        
+        // Валидация телефона
+        const phoneRegex = /^\+7\s\(\d{3}\)\s\d{3}-\d{2}-\d{2}$/;
+        if (!phone.value.trim()) {
+            showFieldError(phone, 'Введите номер телефона');
+            isValid = false;
+        } else if (!phoneRegex.test(phone.value)) {
+            showFieldError(phone, 'Введите телефон в формате: +7 (XXX) XXX-XX-XX');
+            isValid = false;
+        }
+        
+        // Валидация согласия
+        if (!privacy.checked) {
+            showNotification('Необходимо согласие на обработку персональных данных', 'warning');
+            isValid = false;
+        }
         
         return isValid;
     }
@@ -233,8 +300,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Очистить предыдущие ошибки
         clearFieldError(field);
         
-        // Проверка на пустое значение
-        if (!field.value.trim()) {
+        // Проверка на пустое значение для обязательных полей
+        if (field.hasAttribute('required') && !field.value.trim()) {
             isValid = false;
             message = 'Это поле обязательно для заполнения';
         }
@@ -246,12 +313,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 isValid = false;
                 message = 'Введите телефон в формате: +7 (XXX) XXX-XX-XX';
             }
-        }
-        
-        // Проверка checkbox
-        if (field.type === 'checkbox' && !field.checked) {
-            isValid = false;
-            message = 'Необходимо согласие на обработку персональных данных';
         }
         
         // Если есть ошибка, показать её
@@ -297,45 +358,46 @@ document.addEventListener('DOMContentLoaded', function() {
     // МАСКА ДЛЯ ТЕЛЕФОНА
     // ============================================
     function initPhoneMask() {
-        const phoneInput = document.getElementById('phone');
-        if (!phoneInput) return;
+        const phoneInputs = document.querySelectorAll('input[type="tel"]');
         
-        phoneInput.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
+        phoneInputs.forEach(phoneInput => {
+            phoneInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                
+                // Если начинается не с 7, добавляем +7
+                if (!value.startsWith('7') && value.length > 0) {
+                    value = '7' + value;
+                }
+                
+                // Ограничиваем длину
+                if (value.length > 11) {
+                    value = value.substring(0, 11);
+                }
+                
+                // Форматируем
+                let formattedValue = '+7';
+                if (value.length > 1) {
+                    formattedValue += ' (' + value.substring(1, 4);
+                }
+                if (value.length >= 4) {
+                    formattedValue += ') ' + value.substring(4, 7);
+                }
+                if (value.length >= 7) {
+                    formattedValue += '-' + value.substring(7, 9);
+                }
+                if (value.length >= 9) {
+                    formattedValue += '-' + value.substring(9, 11);
+                }
+                
+                e.target.value = formattedValue;
+            });
             
-            // Если начинается не с 7, добавляем +7
-            if (!value.startsWith('7') && value.length > 0) {
-                value = '7' + value;
-            }
-            
-            // Ограничиваем длину
-            if (value.length > 11) {
-                value = value.substring(0, 11);
-            }
-            
-            // Форматируем
-            let formattedValue = '+7';
-            if (value.length > 1) {
-                formattedValue += ' (' + value.substring(1, 4);
-            }
-            if (value.length >= 4) {
-                formattedValue += ') ' + value.substring(4, 7);
-            }
-            if (value.length >= 7) {
-                formattedValue += '-' + value.substring(7, 9);
-            }
-            if (value.length >= 9) {
-                formattedValue += '-' + value.substring(9, 11);
-            }
-            
-            e.target.value = formattedValue;
-        });
-        
-        // При фокусе, если поле пустое, ставим +7
-        phoneInput.addEventListener('focus', function() {
-            if (!this.value) {
-                this.value = '+7 (';
-            }
+            // При фокусе, если поле пустое, ставим +7 (
+            phoneInput.addEventListener('focus', function() {
+                if (!this.value) {
+                    this.value = '+7 (';
+                }
+            });
         });
     }
     
@@ -347,7 +409,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const privacyModal = document.getElementById('privacyModal');
         const closePrivacyModal = document.getElementById('closePrivacyModal');
         const acceptPrivacyPolicy = document.getElementById('acceptPrivacyPolicy');
-        const privacyCheckbox = document.getElementById('privacyPolicy');
         
         if (!privacyModal) return;
         
@@ -372,8 +433,13 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (acceptPrivacyPolicy) {
             acceptPrivacyPolicy.addEventListener('click', function() {
-                if (privacyCheckbox) {
-                    privacyCheckbox.checked = true;
+                // Поставить галочку в активной форме
+                const activeForm = document.querySelector('form:not([style*="display: none"])');
+                if (activeForm) {
+                    const privacyCheckbox = activeForm.querySelector('input[type="checkbox"][name*="privacy"]');
+                    if (privacyCheckbox) {
+                        privacyCheckbox.checked = true;
+                    }
                 }
                 closeModal();
             });
@@ -397,11 +463,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // ============================================
     // МОДАЛЬНОЕ ОКНО УСПЕХА
     // ============================================
-    function showSuccessModal() {
+    function showSuccessModal(message) {
         const modal = document.getElementById('successModal');
+        const messageEl = document.getElementById('successMessage');
         const closeBtn = document.getElementById('closeModal');
         
         if (!modal) return;
+        
+        if (messageEl) {
+            messageEl.textContent = message;
+        }
         
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
@@ -430,8 +501,69 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // ============================================
-    // ПРОЧИЕ ФУНКЦИОНАЛЬНОСТИ
+    // УТИЛИТЫ
     // ============================================
+    function showNotification(message, type = 'info') {
+        // Создать уведомление
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.innerHTML = `
+            <i class="fas fa-${type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        `;
+        
+        // Добавить стили
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${type === 'warning' ? '#fff3cd' : '#d1ecf1'};
+            color: ${type === 'warning' ? '#856404' : '#0c5460'};
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 9999;
+            animation: slideIn 0.3s ease;
+        `;
+        
+        // Добавить в DOM
+        document.body.appendChild(notification);
+        
+        // Удалить через 5 секунд
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 5000);
+        
+        // Добавить анимации
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    function sendAnalytics(event, data) {
+        // В реальном проекте здесь будет отправка в Google Analytics или другой сервис
+        console.log('Analytics:', {
+            event: event,
+            data: data
+        });
+    }
     
     // Обновление года в футере
     function updateFooterYear() {
@@ -442,7 +574,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Инициализация счетчиков посещений (пример)
+    // Инициализация счетчиков посещений
     function initVisitCounter() {
         let visits = localStorage.getItem('makebot_visits') || 0;
         visits = parseInt(visits) + 1;
