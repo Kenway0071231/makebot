@@ -1,59 +1,38 @@
-# ============================================
-# MakeBot Docker Image
-# Версия: 2.1.0
-# ============================================
-
-# Используем официальный Node.js образ LTS
+# Dockerfile
 FROM node:18-alpine
 
-# Устанавливаем метаданные
-LABEL maintainer="MakeBot Team <support@makebot.shop>"
-LABEL version="2.1.0"
-LABEL description="Сайт MakeBot с Telegram уведомлениями"
-
-# Создаем рабочую директорию
 WORKDIR /app
 
-# Копируем package.json и package-lock.json
+# Копируем зависимости
 COPY backend/package*.json ./
 
 # Устанавливаем зависимости
 RUN npm ci --only=production
 
-# Копируем исходный код бэкенда
+# Копируем бэкенд
 COPY backend/ ./
 
 # Копируем фронтенд
 COPY frontend/ ../frontend/
 
-# Создаем папку для данных
-RUN mkdir -p data
+# Копируем скрипты
+COPY start.sh ./
+RUN chmod +x start.sh
 
-# Копируем .env.example
-COPY .env.example .env.example
+# Копируем конфигурацию NGINX
+COPY nginx.conf ./
 
-# Создаем не-root пользователя для безопасности
+# Создаем пользователя
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S -u 1001 nodejs
-
-# Меняем владельца файлов
 RUN chown -R nodejs:nodejs /app
 
-# Переключаемся на не-root пользователя
 USER nodejs
 
-# Открываем порт
 EXPOSE 3000
+EXPOSE 8080
 
-# Переменные окружения
 ENV NODE_ENV=production \
     PORT=3000
 
-# Команда запуска
-CMD ["node", "server.js"]
-# Копируем стартовый скрипт
-COPY start.sh /app/start.sh
-RUN chmod +x /app/start.sh
-
-# Используем стартовый скрипт
-CMD ["/app/start.sh"]
+CMD ["sh", "start.sh"]
