@@ -51,3 +51,9 @@ ENV NODE_ENV=production \
 
 # Команда запуска
 CMD ["node", "server.js"]
+# Копируем стартовый скрипт
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
+# Используем стартовый скрипт
+CMD ["/app/start.sh"]
