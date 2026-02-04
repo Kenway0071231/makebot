@@ -1,7 +1,6 @@
-cat > backend/server.js << 'EOF'
 /**
  * MakeBot Backend Server
- * Версия 2.0
+ * Версия 1.0
  */
 
 const express = require('express');
@@ -17,7 +16,7 @@ const PORT = process.env.PORT || 3000;
 // ============================================
 const config = {
     name: 'MakeBot API',
-    version: '2.0.0',
+    version: '1.0.0',
     contact: {
         email: 'info@makebot.ru',
         phone: '+7 (XXX) XXX-XX-XX'
@@ -36,7 +35,7 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 
 // Логирование запросов
 app.use((req, res, next) => {
-    console.log(`${new Date().toISOString()} - ${req.method} ${req.url} - ${req.ip}`);
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
     next();
 });
 
@@ -57,46 +56,89 @@ app.get('/api/info', (req, res) => {
             name: config.name,
             version: config.version,
             serverTime: new Date().toISOString(),
-            contact: config.contact,
-            uptime: process.uptime()
+            contact: config.contact
         }
     });
+});
+
+// Обработка заявок с калькулятора
+app.post('/api/calculator/estimate', (req, res) => {
+    try {
+        const { answers, totalPrice, contactInfo } = req.body;
+        
+        if (!answers || !totalPrice) {
+            return res.status(400).json({
+                success: false,
+                message: 'Недостаточно данных для расчета'
+            });
+        }
+        
+        // Сохраняем данные в лог (в реальном проекте - в базу данных)
+        const estimateData = {
+            id: Date.now(),
+            timestamp: new Date().toISOString(),
+            answers,
+            totalPrice,
+            contactInfo,
+            ip: req.ip,
+            userAgent: req.get('User-Agent')
+        };
+        
+        // Сохраняем в файл (для демонстрации)
+        const logPath = path.join(__dirname, 'data', 'estimates.json');
+        const estimates = fs.existsSync(logPath) 
+            ? JSON.parse(fs.readFileSync(logPath, 'utf8'))
+            : [];
+        
+        estimates.push(estimateData);
+        fs.writeFileSync(logPath, JSON.stringify(estimates, null, 2));
+        
+        // В реальном проекте здесь будет отправка email или в CRM
+        console.log('Новая заявка с калькулятора:', estimateData);
+        
+        res.json({
+            success: true,
+            message: 'Расчет успешно сохранен',
+            data: {
+                estimateId: estimateData.id,
+                totalPrice,
+                contactInfo
+            }
+        });
+        
+    } catch (error) {
+        console.error('Ошибка при обработке расчета:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Ошибка при обработке расчета'
+        });
+    }
 });
 
 // Обработка контактной формы
 app.post('/api/contact', (req, res) => {
     try {
-        const { name, phone, message } = req.body;
+        const { name, phone, privacyPolicy } = req.body;
         
         // Валидация
-        if (!name || !phone) {
+        if (!name || !phone || !privacyPolicy) {
             return res.status(400).json({
                 success: false,
-                message: 'Пожалуйста, заполните обязательные поля'
+                message: 'Пожалуйста, заполните обязательные поля и подтвердите согласие'
             });
         }
         
-        // Проверка формата телефона
-        const phoneRegex = /^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$/;
-        if (!phoneRegex.test(phone)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Неверный формат телефона'
-            });
-        }
-        
-        // Сохраняем данные
+        // Сохраняем данные (в реальном проекте - в базу данных)
         const contactData = {
             id: Date.now(),
             timestamp: new Date().toISOString(),
             name,
             phone,
-            message: message || 'Не указано',
             ip: req.ip,
             userAgent: req.get('User-Agent')
         };
         
-        // Сохраняем в файл
+        // Сохраняем в файл (для демонстрации)
         const logPath = path.join(__dirname, 'data', 'contacts.json');
         const contacts = fs.existsSync(logPath) 
             ? JSON.parse(fs.readFileSync(logPath, 'utf8'))
@@ -105,15 +147,8 @@ app.post('/api/contact', (req, res) => {
         contacts.push(contactData);
         fs.writeFileSync(logPath, JSON.stringify(contacts, null, 2));
         
-        // Логируем в консоль
-        console.log('Новая заявка:', {
-            id: contactData.id,
-            name: contactData.name,
-            phone: contactData.phone,
-            time: contactData.timestamp
-        });
-        
-        // Здесь можно добавить отправку email, уведомление в Telegram и т.д.
+        // Имитация отправки email
+        console.log('Новая заявка:', contactData);
         
         res.json({
             success: true,
@@ -134,18 +169,31 @@ app.post('/api/contact', (req, res) => {
     }
 });
 
-// Получение статистики
+// Получение статистики (для админки)
 app.get('/api/stats', (req, res) => {
     try {
+        // В реальном проекте здесь будет запрос к базе данных
         const stats = {
+            totalEstimates: 0,
             totalContacts: 0,
-            todayContacts: 0,
-            serverUptime: process.uptime(),
-            memoryUsage: process.memoryUsage()
+            todayEstimates: 0,
+            todayContacts: 0
         };
         
-        // Чтение контактов
+        // Чтение из файлов (для демонстрации)
+        const estimatesPath = path.join(__dirname, 'data', 'estimates.json');
         const contactsPath = path.join(__dirname, 'data', 'contacts.json');
+        
+        if (fs.existsSync(estimatesPath)) {
+            const estimates = JSON.parse(fs.readFileSync(estimatesPath, 'utf8'));
+            stats.totalEstimates = estimates.length;
+            
+            // Подсчет за сегодня
+            const today = new Date().toISOString().split('T')[0];
+            stats.todayEstimates = estimates.filter(e => 
+                e.timestamp.split('T')[0] === today
+            ).length;
+        }
         
         if (fs.existsSync(contactsPath)) {
             const contacts = JSON.parse(fs.readFileSync(contactsPath, 'utf8'));
@@ -172,58 +220,17 @@ app.get('/api/stats', (req, res) => {
     }
 });
 
-// Экспорт данных (только для администратора)
-app.get('/api/export/contacts', (req, res) => {
-    // Простая проверка авторизации (в реальном проекте нужна нормальная авторизация)
-    const authToken = req.headers['x-auth-token'];
-    
-    if (!authToken || authToken !== process.env.ADMIN_TOKEN) {
-        return res.status(403).json({
-            success: false,
-            message: 'Доступ запрещен'
-        });
-    }
-    
-    try {
-        const contactsPath = path.join(__dirname, 'data', 'contacts.json');
-        let data = [];
-        
-        if (fs.existsSync(contactsPath)) {
-            data = JSON.parse(fs.readFileSync(contactsPath, 'utf8'));
-        }
-        
-        // Устанавливаем заголовки для скачивания файла
-        res.setHeader('Content-Type', 'application/json');
-        res.setHeader('Content-Disposition', `attachment; filename="contacts_${Date.now()}.json"`);
-        
-        res.send(JSON.stringify(data, null, 2));
-        
-    } catch (error) {
-        console.error('Ошибка при экспорте данных:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Ошибка при экспорте данных'
-        });
-    }
-});
-
 // Проверка здоровья сервера
 app.get('/api/health', (req, res) => {
     res.json({
         success: true,
         data: {
-            status: 'healthy',
+            status: 'ok',
             timestamp: new Date().toISOString(),
             uptime: process.uptime(),
-            memory: process.memoryUsage(),
-            version: config.version
+            memory: process.memoryUsage()
         }
     });
-});
-
-// Страница политики конфиденциальности
-app.get('/privacy', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/privacy.html'));
 });
 
 // ============================================
@@ -232,16 +239,10 @@ app.get('/privacy', (req, res) => {
 
 // 404 - Not Found
 app.use((req, res) => {
-    if (req.accepts('html')) {
-        res.status(404).sendFile(path.join(__dirname, '../frontend/404.html'));
-    } else if (req.accepts('json')) {
-        res.status(404).json({
-            success: false,
-            message: 'Страница не найдена'
-        });
-    } else {
-        res.status(404).type('txt').send('404 Not Found');
-    }
+    res.status(404).json({
+        success: false,
+        message: 'Страница не найдена'
+    });
 });
 
 // Обработка ошибок
@@ -265,12 +266,6 @@ if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
 }
 
-// Создаем файл контактов если его нет
-const contactsFile = path.join(dataDir, 'contacts.json');
-if (!fs.existsSync(contactsFile)) {
-    fs.writeFileSync(contactsFile, JSON.stringify([], null, 2));
-}
-
 app.listen(PORT, () => {
     console.log(`
     ========================================
@@ -279,37 +274,7 @@ app.listen(PORT, () => {
     🚀 Сервер запущен на порту: ${PORT}
     🌐 Доступен по адресу: http://localhost:${PORT}
     📧 Контакт: ${config.contact.email}
-    📞 Телефон: ${config.contact.contact.phone}
+    📞 Телефон: ${config.contact.phone}
     ========================================
     `);
-    
-    // Автоматическое открытие в браузере (только для разработки)
-    if (process.env.NODE_ENV === 'development') {
-        const { exec } = require('child_process');
-        const platform = process.platform;
-        
-        let command;
-        if (platform === 'darwin') command = 'open';
-        else if (platform === 'win32') command = 'start';
-        else command = 'xdg-open';
-        
-        exec(`${command} http://localhost:${PORT}`);
-    }
 });
-
-// Обработка завершения работы
-process.on('SIGINT', () => {
-    console.log('\n🛑 Сервер останавливается...');
-    process.exit(0);
-});
-
-process.on('SIGTERM', () => {
-    console.log('\n🛑 Сервер получает сигнал завершения...');
-    process.exit(0);
-});
-
-// Экспорт для тестирования
-if (process.env.NODE_ENV === 'test') {
-    module.exports = app;
-}
-EOF
