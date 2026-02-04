@@ -105,11 +105,16 @@ async function sendToTelegram(message, type = 'calculator') {
         
         const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
         
+        console.log(`📤 Отправка сообщения в Telegram: ${url}`);
+        console.log(`📝 Chat ID: ${chatId}`);
+        
         const response = await axios.post(url, {
             chat_id: chatId,
             text: message,
             parse_mode: 'Markdown',
             disable_web_page_preview: true
+        }, {
+            timeout: 10000 // 10 секунд таймаут
         });
         
         console.log(`✅ Сообщение отправлено в Telegram: ${type} #${response.data.result.message_id}`);
@@ -119,7 +124,9 @@ async function sendToTelegram(message, type = 'calculator') {
         console.error('❌ Ошибка отправки в Telegram:', error.message);
         
         if (error.response) {
-            console.error('Детали ошибки:', error.response.data);
+            console.error('Детали ошибки:', JSON.stringify(error.response.data, null, 2));
+        } else if (error.request) {
+            console.error('Нет ответа от сервера Telegram');
         }
         
         return { 
@@ -132,12 +139,14 @@ async function sendToTelegram(message, type = 'calculator') {
 
 // Отправка заявки с калькулятора
 async function sendCalculatorRequest(data) {
+    console.log('📤 Отправка заявки калькулятора в Telegram...');
     const message = formatCalculatorMessage(data);
     return await sendToTelegram(message, 'calculator');
 }
 
 // Отправка контактной заявки
 async function sendContactRequest(data) {
+    console.log('📤 Отправка контактной заявки в Telegram...');
     const message = formatContactMessage(data);
     return await sendToTelegram(message, 'contact');
 }
