@@ -1,10 +1,10 @@
 /**
  * MakeBot Основные скрипты
- * Версия 1.3 - ИСПРАВЛЕННАЯ ВЕРСИЯ
+ * Версия 1.2
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('MakeBot v1.3 loaded');
+    console.log('MakeBot v1.2 loaded');
     
     // ============================================
     // ИНИЦИАЛИЗАЦИЯ
@@ -208,22 +208,30 @@ document.addEventListener('DOMContentLoaded', function() {
                     message: document.getElementById('message').value.trim() || null
                 };
                 
-                // Отправить на сервер (ИСПРАВЛЕНО: правильный URL)
+                console.log('📤 Отправка контактной формы:', formData);
+                
+                // Отправить на сервер
                 const response = await fetch('/api/contact', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     },
                     body: JSON.stringify(formData)
                 });
                 
-                // Проверка ответа сервера
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`Ошибка сервера: ${response.status} - ${errorText}`);
+                console.log('📥 Ответ сервера:', response.status, response.statusText);
+                
+                // Проверим, что это JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('❌ Сервер вернул не JSON:', text.substring(0, 200));
+                    throw new Error('Сервер вернул неверный формат данных');
                 }
                 
                 const result = await response.json();
+                console.log('📊 Результат:', result);
                 
                 if (result.success) {
                     // Показать успешное сообщение
@@ -240,8 +248,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
             } catch (error) {
-                console.error('Ошибка отправки формы:', error);
-                showNotification(`Ошибка при отправке формы: ${error.message}. Пожалуйста, попробуйте еще раз или свяжитесь с нами напрямую.`, 'warning');
+                console.error('❌ Ошибка отправки формы:', error);
+                showNotification('Ошибка при отправке формы. Пожалуйста, попробуйте еще раз или свяжитесь с нами напрямую.', 'warning');
             } finally {
                 // Восстановить кнопку
                 submitBtn.innerHTML = originalText;
@@ -369,41 +377,42 @@ document.addEventListener('DOMContentLoaded', function() {
         phoneInputs.forEach(phoneInput => {
             phoneInput.addEventListener('input', function(e) {
                 let value = e.target.value.replace(/\D/g, '');
-                        // Если начинается не с 7, добавляем +7
-        if (!value.startsWith('7') && value.length > 0) {
-            value = '7' + value;
-        }
-        
-        // Ограничиваем длину
-        if (value.length > 11) {
-            value = value.substring(0, 11);
-        }
-        
-        // Форматируем
-        let formattedValue = '+7';
-        if (value.length > 1) {
-            formattedValue += ' (' + value.substring(1, 4);
-        }
-        if (value.length >= 4) {
-            formattedValue += ') ' + value.substring(4, 7);
-        }
-        if (value.length >= 7) {
-            formattedValue += '-' + value.substring(7, 9);
-        }
-        if (value.length >= 9) {
-            formattedValue += '-' + value.substring(9, 11);
-        }
-        
-        e.target.value = formattedValue;
-    });
-    
-    // При фокусе, если поле пустое, ставим +7 (
-    phoneInput.addEventListener('focus', function() {
-        if (!this.value) {
-            this.value = '+7 (';
-        }
-    });
-});
+                
+                // Если начинается не с 7, добавляем +7
+                if (!value.startsWith('7') && value.length > 0) {
+                    value = '7' + value;
+                }
+                
+                // Ограничиваем длину
+                if (value.length > 11) {
+                    value = value.substring(0, 11);
+                }
+                
+                // Форматируем
+                let formattedValue = '+7';
+                if (value.length > 1) {
+                    formattedValue += ' (' + value.substring(1, 4);
+                }
+                if (value.length >= 4) {
+                    formattedValue += ') ' + value.substring(4, 7);
+                }
+                if (value.length >= 7) {
+                    formattedValue += '-' + value.substring(7, 9);
+                }
+                if (value.length >= 9) {
+                    formattedValue += '-' + value.substring(9, 11);
+                }
+                
+                e.target.value = formattedValue;
+            });
+            
+            // При фокусе, если поле пустое, ставим +7 (
+            phoneInput.addEventListener('focus', function() {
+                if (!this.value) {
+                    this.value = '+7 (';
+                }
+            });
+        });
     }
     
     // ============================================
