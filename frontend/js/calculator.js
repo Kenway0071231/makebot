@@ -957,16 +957,30 @@ document.addEventListener('DOMContentLoaded', function() {
                     calculation: calculatorConfig.calculationData
                 };
                 
-                // Отправить на сервер
+                console.log('📤 Отправка данных калькулятора:', formData);
+                
+                // Отправить на сервер - ВАЖНО: правильный Content-Type
                 const response = await fetch('/api/calculator/submit', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     },
                     body: JSON.stringify(formData)
                 });
                 
+                console.log('📥 Ответ сервера:', response.status, response.statusText);
+                
+                // Проверим, что это JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('❌ Сервер вернул не JSON:', text.substring(0, 200));
+                    throw new Error('Сервер вернул неверный формат данных');
+                }
+                
                 const result = await response.json();
+                console.log('📊 Результат:', result);
                 
                 if (result.success) {
                     // Показать успешное сообщение
@@ -975,21 +989,30 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Сбросить форму
                     elements.calculatorContactForm.reset();
                     
-                    // Скрыть форму после успешной отправки
+                    // Скрыть форму после успешной отправки (опционально)
                     setTimeout(() => {
                         elements.contactFormContainer.style.display = 'none';
                     }, 3000);
                     
                     // Отправить аналитику
-                    sendAnalytics('calculator_form_submitted', formData);
+                    sendAnalytics('calculator_form_submitted', { 
+                        name: formData.name, 
+                        phone: formData.phone,
+                        telegramSent: result.data?.telegramSent || false
+                    });
                     
                 } else {
                     throw new Error(result.message || 'Ошибка при отправке формы');
                 }
                 
             } catch (error) {
-                console.error('Ошибка отправки формы:', error);
-                showNotification('Ошибка при отправке формы. Пожалуйста, попробуйте еще раз или свяжитесь с нами напрямую.', 'warning');
+                console.error('❌ Ошибка отправки формы:', error);
+                showNotification('Ошибка при отправке формы: ' + error.message, 'warning');
+                
+                // Для отладки: покажем полную ошибку в консоли
+                if (error.response) {
+                    console.error('Детали ошибки:', error.response);
+                }
             } finally {
                 // Восстановить кнопку
                 submitBtn.innerHTML = originalText;
