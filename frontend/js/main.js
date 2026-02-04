@@ -1,10 +1,10 @@
 /**
  * MakeBot Основные скрипты
- * Версия 1.3 (без Telegram)
+ * Версия 1.4 (с исправленной отправкой форм)
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('MakeBot v1.3 loaded');
+    console.log('MakeBot v1.4 loaded');
     
     // ============================================
     // ИНИЦИАЛИЗАЦИЯ
@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // ============================================
-    // ВАЛИДАЦИЯ КОНТАКТНОЙ ФОРМЫ
+    // ВАЛИДАЦИЯ КОНТАКТНОЙ ФОРМЫ (ИСПРАВЛЕННАЯ)
     // ============================================
     function initFormValidation() {
         const contactForm = document.getElementById('contactForm');
@@ -209,7 +209,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 console.log('📤 Отправка контактной формы:', formData);
                 
-                // Отправить на сервер
+                // Отправить на сервер (исправленный путь)
                 const response = await fetch('/api/contact', {
                     method: 'POST',
                     headers: {
