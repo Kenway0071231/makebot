@@ -181,53 +181,54 @@
                         </div>
                         
                         <div class="result-contact-form" id="contactFormContainer">
-                            <div class="contact-form-header">
-                                <h4><i class="fas fa-user-check"></i> Оставьте контакты для связи</h4>
-                                <p>Мы отправим вам детальный расчет и обсудим проект</p>
-                            </div>
-                            
-                            <form id="calculatorContactForm">
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label for="calcName"><i class="fas fa-user"></i> Ваше имя *</label>
-                                        <input type="text" id="calcName" placeholder="Иван Иванов" required>
-                                    </div>
-                                    
-                                    <div class="form-group">
-                                        <label for="calcPhone"><i class="fas fa-phone"></i> Телефон *</label>
-                                        <input type="tel" id="calcPhone" placeholder="+7 (XXX) XXX-XX-XX" required>
-                                    </div>
-                                </div>
-                                
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label for="calcEmail"><i class="fas fa-envelope"></i> Email (необязательно)</label>
-                                        <input type="email" id="calcEmail" placeholder="ivan@example.com">
-                                    </div>
-                                    
-                                    <div class="form-group">
-                                        <label for="calcComment"><i class="fas fa-comment"></i> Комментарий (необязательно)</label>
-                                        <textarea id="calcComment" placeholder="Дополнительные пожелания или вопросы" rows="2"></textarea>
-                                    </div>
-                                </div>
-                                
-                                <div class="form-group checkbox-group">
-                                    <input type="checkbox" id="calcPrivacyPolicy" name="calcPrivacyPolicy" required>
-                                    <label for="calcPrivacyPolicy">
-                                        Я согласен на <a href="#privacyModal" class="privacy-link">обработку персональных данных</a> *
-                                    </label>
-                                </div>
-                                
-                                <div class="result-actions">
-                                    <button type="submit" class="btn-primary" id="submitCalculatorForm">
-                                        <i class="fas fa-paper-plane"></i> Получить детальный расчет
-                                    </button>
-                                    <button type="button" class="btn-secondary" id="resetCalculator">
-                                        <i class="fas fa-redo"></i> Новый расчет
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
+    <div class="contact-form-header">
+        <h4><i class="fas fa-user-check"></i> Оставьте контакты для связи</h4>
+        <p>Мы отправим вам детальный расчет и обсудим проект</p>
+    </div>
+    
+    <form id="calculatorContactForm">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="calcName"><i class="fas fa-user"></i> Ваше имя *</label>
+                <input type="text" id="calcName" placeholder="Иван Иванов" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="calcPhone"><i class="fas fa-phone"></i> Телефон *</label>
+                <input type="tel" id="calcPhone" placeholder="+7 (XXX) XXX-XX-XX" required>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="calcEmail"><i class="fas fa-envelope"></i> Email (необязательно)</label>
+                <input type="email" id="calcEmail" placeholder="ivan@example.com">
+            </div>
+            
+            <div class="form-group">
+                <label for="calcComment"><i class="fas fa-comment"></i> Комментарий (необязательно)</label>
+                <textarea id="calcComment" placeholder="Дополнительные пожелания или вопросы" rows="2"></textarea>
+            </div>
+        </div>
+        
+        <!-- ДОБАВЛЕН ЧЕКБОКС ДЛЯ КАЛЬКУЛЯТОРА -->
+        <div class="form-group checkbox-group">
+            <input type="checkbox" id="calcPrivacyPolicy" name="calcPrivacyPolicy" required>
+            <label for="calcPrivacyPolicy">
+                Я согласен на <a href="#privacyModal" class="privacy-link">обработку персональных данных</a> *
+            </label>
+        </div>
+        
+        <div class="result-actions">
+            <button type="submit" class="btn-primary" id="submitCalculatorForm">
+                <i class="fas fa-paper-plane"></i> Получить детальный расчет
+            </button>
+            <button type="button" class="btn-secondary" id="resetCalculator">
+                <i class="fas fa-redo"></i> Новый расчет
+            </button>
+        </div>
+    </form>
+</div>
                     </div>
                 </div>
             </div>
