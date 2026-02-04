@@ -1,10 +1,10 @@
 /**
  * MakeBot Основные скрипты
- * Версия 1.2
+ * Версия 1.3 (без Telegram)
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('MakeBot v1.2 loaded');
+    console.log('MakeBot v1.3 loaded');
     
     // ============================================
     // ИНИЦИАЛИЗАЦИЯ
@@ -144,9 +144,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         counters.forEach(counter => {
             const target = counter.textContent;
-            // Проверяем, есть ли диапазон (например, "3-7")
             if (target.includes('-')) {
-                return; // Пропускаем диапазоны
+                return;
             }
             
             const targetNumber = parseInt(target);
@@ -239,9 +238,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Сбросить форму
                     contactForm.reset();
-                    
-                    // Отправить аналитику
-                    sendAnalytics('contact_form_submitted', formData);
                     
                 } else {
                     throw new Error(result.message || 'Ошибка при отправке формы');
@@ -571,14 +567,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.head.appendChild(style);
     }
     
-    function sendAnalytics(event, data) {
-        // В реальном проекте здесь будет отправка в Google Analytics или другой сервис
-        console.log('Analytics:', {
-            event: event,
-            data: data
-        });
-    }
-    
     // Обновление года в футере
     function updateFooterYear() {
         const yearElement = document.querySelector('.copyright');
@@ -594,7 +582,6 @@ document.addEventListener('DOMContentLoaded', function() {
         visits = parseInt(visits) + 1;
         localStorage.setItem('makebot_visits', visits);
         
-        // Можно отображать где-нибудь
         console.log(`Посещений сайта: ${visits}`);
     }
     
