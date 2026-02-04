@@ -1,14 +1,14 @@
 /**
- * MakeBot Калькулятор стоимости v2.1
- * Исправленная версия с рабочими переходами
+ * MakeBot Калькулятор стоимости v2.2
+ * Исправленная версия с рабочими переходами (без Telegram)
  */
 
 document.addEventListener('DOMContentLoaded', function() {
     // ============================================
-    // КОНФИГУРАЦИЯ КАЛЬКУЛЯТОРА v2.1
+    // КОНФИГУРАЦИЯ КАЛЬКУЛЯТОРА v2.2
     // ============================================
     const calculatorConfig = {
-        version: '2.1.0',
+        version: '2.2.0',
         currentStep: 1,
         totalSteps: 5,
         answers: {},
@@ -437,7 +437,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ИНИЦИАЛИЗАЦИЯ
     // ============================================
     function initCalculator() {
-        console.log('MakeBot Calculator v' + calculatorConfig.version);
+        console.log('MakeBot Calculator v' + calculatorConfig.version + ' (без Telegram)');
         showQuestion(1);
         setupEventListeners();
     }
@@ -959,7 +959,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 console.log('📤 Отправка данных калькулятора:', formData);
                 
-                // Отправить на сервер - ВАЖНО: правильный Content-Type
+                // Отправить на сервер
                 const response = await fetch('/api/calculator/submit', {
                     method: 'POST',
                     headers: {
@@ -993,13 +993,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     setTimeout(() => {
                         elements.contactFormContainer.style.display = 'none';
                     }, 3000);
-                    
-                    // Отправить аналитику
-                    sendAnalytics('calculator_form_submitted', { 
-                        name: formData.name, 
-                        phone: formData.phone,
-                        telegramSent: result.data?.telegramSent || false
-                    });
                     
                 } else {
                     throw new Error(result.message || 'Ошибка при отправке формы');
@@ -1048,7 +1041,7 @@ document.addEventListener('DOMContentLoaded', function() {
             isValid = false;
         }
         
-        // Валидация согласия (ДОБАВЛЕНА ПРОВЕРКА ЧЕКБОКСА)
+        // Валидация согласия
         if (!privacy.checked) {
             showNotification('Необходимо согласие на обработку персональных данных', 'warning');
             isValid = false;
@@ -1240,16 +1233,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 modal.classList.remove('active');
                 document.body.style.overflow = '';
                 document.removeEventListener('keydown', closeOnEscape);
-            }
-        });
-    }
-
-    function sendAnalytics(event, data) {
-        console.log('Analytics:', {
-            event: event,
-            data: {
-                ...data,
-                calculation: data.calculation ? '...' : null
             }
         });
     }
