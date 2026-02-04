@@ -12,6 +12,8 @@ function validateTelegramEnv() {
     
     if (missing.length > 0) {
         console.warn('⚠️  Отсутствуют переменные Telegram:', missing.join(', '));
+        console.warn('   TELEGRAM_BOT_TOKEN:', process.env.TELEGRAM_BOT_TOKEN ? '***' + process.env.TELEGRAM_BOT_TOKEN.slice(-4) : 'НЕТ');
+        console.warn('   TELEGRAM_CHAT_ID:', process.env.TELEGRAM_CHAT_ID ? process.env.TELEGRAM_CHAT_ID : 'НЕТ');
         return false;
     }
     
@@ -22,7 +24,7 @@ function validateTelegramEnv() {
 function formatCalculatorMessage(data) {
     const calculation = data.calculation;
     
-    return `
+    let message = `
 🚀 *Новая заявка с калькулятора*
 ────────────────────
 *ID:* #${data.id}
@@ -33,38 +35,50 @@ function formatCalculatorMessage(data) {
 Телефон: ${data.phone}
 ${data.email ? `Email: ${data.email}` : ''}
 IP: ${data.ip}
+`;
 
-${data.comment ? `💬 *Комментарий клиента*
+    if (data.comment && data.comment.trim()) {
+        message += `
+💬 *Комментарий клиента*
 ${data.comment}
 ────────────────────
-` : ''}
+`;
+    }
 
+    message += `
 📊 *Расчет стоимости*
-Тип проекта: ${calculation.projectType}
-Платформы: ${calculation.platforms}
-Интеграции: ${calculation.integrations}
-Сложность: ${calculation.complexity}
-Срочность: ${calculation.deadline}
+Тип проекта: ${calculation.projectType || 'Не указано'}
+Платформы: ${calculation.platforms || 'Не указано'}
+Интеграции: ${calculation.integrations || 'Не указано'}
+Сложность: ${calculation.complexity || 'Не указано'}
+Срочность: ${calculation.deadline || 'Не указано'}
 
 💰 *Стоимость*
-${calculation.totalPrice.toLocaleString('ru-RU')} ₽
-Диапазон: ${calculation.minPrice.toLocaleString('ru-RU')} – ${calculation.maxPrice.toLocaleString('ru-RU')} ₽
+${(calculation.totalPrice || 0).toLocaleString('ru-RU')} ₽
+Диапазон: ${(calculation.minPrice || 0).toLocaleString('ru-RU')} – ${(calculation.maxPrice || 0).toLocaleString('ru-RU')} ₽
+`;
 
+    if (calculation.timeline) {
+        message += `
 📅 *Сроки разработки*
-Проектирование: ${calculation.timeline.planning}
-Разработка: ${calculation.timeline.development}
-Тестирование: ${calculation.timeline.testing}
+Проектирование: ${calculation.timeline.planning || 'Не указано'}
+Разработка: ${calculation.timeline.development || 'Не указано'}
+Тестирование: ${calculation.timeline.testing || 'Не указано'}
 ────────────────────
-*Общий срок:* ${calculation.timeline.total}
+*Общий срок:* ${calculation.timeline.total || 'Не указано'}
 ────────────────────
-🕐 ${new Date(data.timestamp).toLocaleString('ru-RU')}
-📍 IP: ${data.ip}
-`.trim();
+`;
+    }
+
+    message += `🕐 ${new Date(data.timestamp).toLocaleString('ru-RU')}
+📍 IP: ${data.ip}`;
+    
+    return message.trim();
 }
 
 // Форматирование сообщения для контактной формы
 function formatContactMessage(data) {
-    return `
+    let message = `
 📞 *Новая контактная заявка*
 ────────────────────
 *ID:* #${data.id}
@@ -74,16 +88,23 @@ function formatContactMessage(data) {
 Имя: ${data.name}
 Телефон: ${data.phone}
 IP: ${data.ip}
+`;
 
-${data.message ? `💬 *Сообщение*
+    if (data.message && data.message.trim()) {
+        message += `
+💬 *Сообщение*
 ${data.message}
 ────────────────────
-` : ''}
+`;
+    }
 
+    message += `
 🕐 ${new Date(data.timestamp).toLocaleString('ru-RU')}
 📍 IP: ${data.ip}
-🌐 User-Agent: ${data.userAgent?.substring(0, 50)}...
-`.trim();
+🌐 User-Agent: ${(data.userAgent || '').substring(0, 50)}...
+`;
+    
+    return message.trim();
 }
 
 // Отправка сообщения в Telegram
@@ -94,68 +115,65 @@ async function sendToTelegram(message, type = 'calculator') {
     }
 
     try {
-        const botToken = process.env.TELEGRAM_BOT_TOKEN;
-        const chatId = process.env.TELEGRAM_CHAT_ID;
+        const botToken = process.env.TELEGRAM_BOT_TOKEN.trim();
+        const chatId = process.env.TELEGRAM_CHAT_ID.trim();
         
-        // Проверка формата токена и chat_id
-        if (!botToken || botToken.length < 30) {
-            console.error('❌ Некорректный токен Telegram бота');
-            return { success: false, error: 'Некорректный токен Telegram бота' };
-        }
-        
-        if (!chatId || isNaN(parseInt(chatId))) {
-            console.error('❌ Некорректный Chat ID');
-            return { success: false, error: 'Некорректный Chat ID' };
-        }
+        console.log(`📤 Отправка сообщения в Telegram (тип: ${type})`);
+        console.log(`🤖 Токен: ${botToken.substring(0, 5)}...${botToken.substring(botToken.length - 4)}`);
+        console.log(`💬 Chat ID: ${chatId}`);
         
         // Обрезаем длинные сообщения (ограничение Telegram - 4096 символов)
         const maxLength = 4000;
         if (message.length > maxLength) {
+            console.log(`⚠️  Сообщение слишком длинное (${message.length} символов), обрезаем...`);
             message = message.substring(0, maxLength) + '...\n\n[Сообщение было обрезано]';
         }
         
         const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
         
-        console.log(`📤 Отправка сообщения в Telegram: ${url.substring(0, 60)}...`);
-        console.log(`📝 Chat ID: ${chatId}`);
+        console.log(`🌐 URL: ${url.substring(0, 50)}...`);
         
         const response = await axios.post(url, {
             chat_id: chatId,
             text: message,
             parse_mode: 'Markdown',
-            disable_web_page_preview: true
+            disable_web_page_preview: true,
+            disable_notification: false
         }, {
-            timeout: 10000, // 10 секунд таймаут
+            timeout: 30000, // 30 секунд таймаут
             headers: {
                 'Content-Type': 'application/json'
             }
         });
         
         console.log(`✅ Сообщение отправлено в Telegram: ${type} #${response.data.result.message_id}`);
-        return { success: true, messageId: response.data.result.message_id };
+        console.log(`📨 Текст сообщения (первые 200 символов): ${message.substring(0, 200)}...`);
+        
+        return { 
+            success: true, 
+            messageId: response.data.result.message_id,
+            details: response.data
+        };
         
     } catch (error) {
         console.error('❌ Ошибка отправки в Telegram:', error.message);
         
         if (error.response) {
-            console.error('Детали ошибки:', JSON.stringify(error.response.data, null, 2));
-            
-            // Проверка конкретных ошибок
-            if (error.response.data.description === 'Forbidden: bot was blocked by the user') {
-                console.error('❌ Бот заблокирован пользователем');
-            } else if (error.response.data.description === 'Bad Request: chat not found') {
-                console.error('❌ Чат не найден. Проверьте Chat ID');
-            } else if (error.response.data.description.includes('invalid token')) {
-                console.error('❌ Неверный токен бота');
-            }
+            console.error('📊 Детали ошибки:', JSON.stringify(error.response.data, null, 2));
+            console.error('🔧 Статус:', error.response.status);
+            console.error('📋 Заголовки:', error.response.headers);
         } else if (error.request) {
-            console.error('Нет ответа от сервера Telegram. Проверьте подключение к интернету');
+            console.error('🌐 Нет ответа от сервера Telegram');
+            console.error('Запрос:', error.request);
+        } else {
+            console.error('⚙️ Ошибка настройки запроса:', error.message);
         }
         
         return { 
             success: false, 
             error: error.message,
-            details: error.response?.data 
+            details: error.response?.data,
+            code: error.code
         };
     }
 }
@@ -164,6 +182,7 @@ async function sendToTelegram(message, type = 'calculator') {
 async function sendCalculatorRequest(data) {
     console.log('📤 Отправка заявки калькулятора в Telegram...');
     const message = formatCalculatorMessage(data);
+    console.log(`📝 Сообщение сформировано (${message.length} символов)`);
     return await sendToTelegram(message, 'calculator');
 }
 
@@ -171,6 +190,7 @@ async function sendCalculatorRequest(data) {
 async function sendContactRequest(data) {
     console.log('📤 Отправка контактной заявки в Telegram...');
     const message = formatContactMessage(data);
+    console.log(`📝 Сообщение сформировано (${message.length} символов)`);
     return await sendToTelegram(message, 'contact');
 }
 
