@@ -674,12 +674,6 @@ document.addEventListener('DOMContentLoaded', function() {
             scrollToContactForm();
         });
         
-        // Обработчик формы
-        const contactForm = document.getElementById('contactForm');
-        if (contactForm) {
-            contactForm.addEventListener('submit', handleFormSubmit);
-        }
-        
         // FAQ аккордеон
         setupFAQAccordion();
     }
@@ -701,70 +695,13 @@ document.addEventListener('DOMContentLoaded', function() {
             behavior: 'smooth', 
             block: 'start' 
         });
-        
-        // Заполнить форму данными из калькулятора
-        fillContactForm();
-    }
-
-    function fillContactForm() {
-        const serviceSelect = document.getElementById('service');
-        const messageTextarea = document.getElementById('message');
-        
-        if (serviceSelect && calculatorConfig.answers.service) {
-            serviceSelect.value = calculatorConfig.answers.service.id;
-        }
-        
-        if (messageTextarea) {
-            let message = 'Интересующая услуга: ' + (calculatorConfig.answers.service?.text || 'Не указано') + '\n';
-            message += 'Платформы: ' + (calculatorConfig.answers.platforms?.map(p => p.text).join(', ') || 'Не указано') + '\n';
-            message += 'Интеграции: ' + (calculatorConfig.answers.integrations?.map(i => i.text).join(', ') || 'Не указано') + '\n';
-            message += 'Сложность: ' + (calculatorConfig.answers.complexity?.text || 'Не указано') + '\n';
-            message += 'Срочность: ' + (calculatorConfig.answers.deadline?.text || 'Не указано');
-            
-            messageTextarea.value = message;
-        }
-    }
-
-    function handleFormSubmit(e) {
-        e.preventDefault();
-        
-        // Показать состояние загрузки
-        const submitBtn = e.target.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Отправка...';
-        submitBtn.disabled = true;
-        
-        // Собрать данные формы
-        const formData = {
-            name: document.getElementById('name').value,
-            phone: document.getElementById('phone').value,
-            email: document.getElementById('email').value,
-            company: document.getElementById('company').value,
-            service: document.getElementById('service').value,
-            message: document.getElementById('message').value,
-            calculatorData: calculatorConfig.answers
-        };
-        
-        // Имитация отправки (в реальном проекте здесь будет fetch на сервер)
-        setTimeout(() => {
-            // Показать модальное окно успеха
-            showSuccessModal();
-            
-            // Сбросить форму
-            e.target.reset();
-            
-            // Восстановить кнопку
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-            
-            // Отправить аналитику
-            sendFormAnalytics(formData);
-        }, 1500);
     }
 
     function showSuccessModal() {
         const modal = document.getElementById('successModal');
         const closeBtn = document.getElementById('closeModal');
+        
+        if (!modal) return;
         
         modal.classList.add('active');
         
@@ -867,11 +804,6 @@ document.addEventListener('DOMContentLoaded', function() {
             event: 'calculator_completed',
             data: calculation
         });
-    }
-
-    function sendFormAnalytics(formData) {
-        // В реальном проекте здесь будет отправка в CRM или на сервер
-        console.log('Form submitted:', formData);
     }
 
     // ============================================
