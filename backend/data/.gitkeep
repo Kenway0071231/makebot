@@ -1,0 +1,4 @@
+# Создайте файл .gitkeep в папке backend/data/
+# Это нужно чтобы папка data попала в Git, но файлы внутри - нет
+
+touch backend/data/.gitkeep
