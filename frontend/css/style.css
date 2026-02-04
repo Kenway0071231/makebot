@@ -94,23 +94,6 @@ body {
     transform: translateY(0);
 }
 
-/* Утилиты */
-.text-center { text-align: center; }
-.text-left { text-align: left; }
-.text-right { text-align: right; }
-
-.mt-1 { margin-top: 0.5rem; }
-.mt-2 { margin-top: 1rem; }
-.mt-3 { margin-top: 1.5rem; }
-.mt-4 { margin-top: 2rem; }
-.mt-5 { margin-top: 3rem; }
-
-.mb-1 { margin-bottom: 0.5rem; }
-.mb-2 { margin-bottom: 1rem; }
-.mb-3 { margin-bottom: 1.5rem; }
-.mb-4 { margin-bottom: 2rem; }
-.mb-5 { margin-bottom: 3rem; }
-
 /* ============================================
    ТИПОГРАФИЯ
    ============================================ */
@@ -221,7 +204,7 @@ a:hover {
 
 .btn-outline:hover {
     background-color: var(--primary);
-    color: var(--white) !important;
+    color: var(--white);
     transform: translateY(-2px);
 }
 
@@ -1219,15 +1202,6 @@ a:hover {
     margin-top: 30px;
 }
 
-.form-note {
-    font-size: 0.85rem;
-    color: var(--gray);
-    margin-top: 15px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
 .contact-info {
     display: flex;
     flex-direction: column;
@@ -1881,71 +1855,3 @@ a:hover {
         min-width: 100%;
     }
 }
-
-/* ============================================
-   АНИМАЦИИ И ЭФФЕКТЫ
-   ============================================ */
-.fade-in {
-    animation: fadeIn 0.6s ease;
-}
-
-.slide-up {
-    animation: slideUp 0.6s ease;
-}
-
-.pulse {
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0% {
-        box-shadow: 0 0 0 0 rgba(67, 97, 238, 0.4);
-    }
-    70% {
-        box-shadow: 0 0 0 10px rgba(67, 97, 238, 0);
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(67, 97, 238, 0);
-    }
-}
-
-/* ============================================
-   УТИЛИТЫ ДЛЯ JS
-   ============================================ */
-.hidden {
-    display: none !important;
-}
-
-.visible {
-    display: block !important;
-}
-
-.loading {
-    position: relative;
-    pointer-events: none;
-    opacity: 0.7;
-}
-
-.loading::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 20px;
-    height: 20px;
-    margin: -10px 0 0 -10px;
-    border: 2px solid var(--gray-light);
-    border-top-color: var(--primary);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-/* ============================================
-   КОНЕЦ ФАЙЛА STYLE.CSS
-   ============================================ */
