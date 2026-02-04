@@ -1,77 +1,87 @@
 #!/bin/bash
+# start.sh
 
-echo "🚀 Запуск MakeBot сайта v2.0..."
+echo "============================================"
+echo "        MakeBot Startup Script              "
+echo "============================================"
+echo ""
 
-# Проверка Docker
-if ! command -v docker &> /dev/null; then
-    echo "❌ Docker не установлен!"
-    echo "Установите Docker: https://docs.docker.com/get-docker/"
-    exit 1
+# Установите путь к проекту
+PROJECT_PATH="/home/$(whoami)/makebot-site"
+
+# Проверка переменных окружения
+echo "🔍 Проверка переменных окружения..."
+if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
+    echo "⚠️  Внимание: TELEGRAM_BOT_TOKEN или TELEGRAM_CHAT_ID не установлены!"
+    echo "   Проверьте файл .env"
 fi
 
-# Проверка Docker Compose
-if ! command -v docker-compose &> /dev/null; then
-    echo "❌ Docker Compose не установлен!"
-    echo "Установите Docker Compose: https://docs.docker.com/compose/install/"
-    exit 1
+# Установите ID Cloud Shell
+export CLOUD_SHELL_ID=$(hostname)
+echo "🌐 Cloud Shell ID: $CLOUD_SHELL_ID"
+
+# Перейдите в директорию проекта
+cd "$PROJECT_PATH"
+
+# Проверьте зависимости
+echo "📦 Проверка зависимостей Node.js..."
+cd backend
+if [ ! -d "node_modules" ]; then
+    echo "Установка зависимостей..."
+    npm install
 fi
 
-# Проверка .env файла
-if [ ! -f .env ]; then
-    echo "⚠️  Файл .env не найден!"
-    if [ -f .env.example ]; then
-        echo "📋 Копирую .env.example в .env..."
-        cp .env.example .env
-        echo "⚠️  Отредактируйте файл .env и добавьте SMTP настройки!"
-        echo ""
-        echo "Необходимо добавить в .env:"
-        echo "SMTP_HOST=smtp.yandex.ru"
-        echo "SMTP_PORT=465"
-        echo "SMTP_USER=Denis.Kenway@yandex.ru"
-        echo "SMTP_PASS=Deniska040406"
-        echo "ADMIN_EMAIL=Denis.Kenway@yandex.ru"
-        echo ""
-        read -p "Продолжить? (y/N): " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            echo "❌ Прервано пользователем"
-            exit 1
-        fi
-    else
-        echo "❌ Файл .env.example также отсутствует!"
-        exit 1
-    fi
-fi
+# Запустите Node.js сервер в фоне
+echo "🚀 Запуск Node.js сервера..."
+npm start &
+SERVER_PID=$!
 
-# Запуск проекта
-echo "🐳 Запуск Docker контейнеров..."
-docker-compose up --build -d
+# Дайте серверу время запуститься
+echo "⏳ Ожидание запуска сервера (5 секунд)..."
+sleep 5
 
-# Ожидание запуска
-echo "⏳ Ожидание запуска приложения..."
-sleep 30
-
-# Проверка
-if curl -s http://localhost:3000 > /dev/null; then
+# Проверьте, запустился ли сервер
+if ps -p $SERVER_PID > /dev/null; then
+    echo "✅ Node.js сервер запущен (PID: $SERVER_PID)"
+    
+    # Протестируйте сервер
+    echo "🧪 Тестирование API..."
+    curl -s -o /dev/null -w "HTTP статус: %{http_code}\n" http://localhost:3000/api/health
+    
+    # Запустите NGINX
+    echo "🌐 Настройка NGINX..."
+    sudo nginx -c "$PROJECT_PATH/nginx.conf"
+    
+    # Определите URL
+    PORT=8080
+    URL="https://${CLOUD_SHELL_ID}-${PORT}.hosted.codelabs.site"
+    
     echo ""
-    echo "✅ Сайт успешно запущен!"
+    echo "============================================"
+    echo "✅ СИСТЕМА ЗАПУЩЕНА УСПЕШНО!"
+    echo "============================================"
     echo ""
-    echo "🌐 Откройте в браузере:"
-    echo "   http://localhost:3000"
-    echo "   или"
-    echo "   http://$(curl -s ifconfig.me):3000"
+    echo "🌐 Ваш сайт доступен по адресу:"
+    echo "   $URL"
     echo ""
-    echo "🛠️  Команды управления:"
-    echo "   Логи:        docker-compose logs -f"
-    echo "   Остановка:   docker-compose down"
-    echo "   Перезапуск:  docker-compose restart"
-    echo "   Статус:      docker-compose ps"
+    echo "📱 Телеграм-бот настроен:"
+    echo "   Токен: ${TELEGRAM_BOT_TOKEN:0:10}..."
+    echo "   Chat ID: $TELEGRAM_CHAT_ID"
     echo ""
-    echo "📧 Проверка отправки писем:"
-    echo "   Проверьте, что в .env правильные SMTP настройки"
+    echo "🔧 Команды для проверки:"
+    echo "   Проверить здоровье: curl $URL/api/health"
+    echo "   Тест Telegram: curl $URL/api/test/telegram"
     echo ""
+    echo "🛠️  Для остановки нажмите Ctrl+C, затем:"
+    echo "   sudo nginx -s stop && kill $SERVER_PID"
+    
+    # Сохраните PID для последующей остановки
+    echo $SERVER_PID > /tmp/makebot_server.pid
+    
 else
-    echo "❌ Ошибка запуска!"
-    echo "Проверьте логи: docker-compose logs makebot"
+    echo "❌ Ошибка: Node.js сервер не запустился"
     exit 1
 fi
+
+# Держим скрипт активным
+wait $SERVER_PID
