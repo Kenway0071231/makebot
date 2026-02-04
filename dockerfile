@@ -1,6 +1,6 @@
 # ============================================
 # MakeBot Docker Image
-# Версия: 2.0.0
+# Версия: 2.1.0
 # ============================================
 
 # Используем официальный Node.js образ LTS
@@ -8,8 +8,8 @@ FROM node:18-alpine
 
 # Устанавливаем метаданные
 LABEL maintainer="MakeBot Team <support@makebot.shop>"
-LABEL version="2.0.0"
-LABEL description="Сайт MakeBot - разработка чат-ботов, ИИ решений и сайтов"
+LABEL version="2.1.0"
+LABEL description="Сайт MakeBot с Telegram уведомлениями"
 
 # Создаем рабочую директорию
 WORKDIR /app
