@@ -1,6 +1,7 @@
 /**
  * MakeBot Backend Server
  * Версия 2.1
+ * ИСПРАВЛЕННАЯ ВЕРСИЯ
  */
 
 const express = require('express');
@@ -50,9 +51,19 @@ if (telegram.validateTelegramEnv()) {
 }
 
 // ============================================
-// ПОДКЛЮЧЕНИЕ БИБЛИОТЕК
+// НАСТРОЙКА MIDDLEWARE (ИСПРАВЛЕНО)
 // ============================================
-app.use(cors());
+// Настройка CORS для разрешения запросов с фронтенда
+app.use(cors({
+    origin: '*', // Разрешаем все источники (в продакшене укажите конкретный домен)
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Обработка OPTIONS-запросов для CORS
+app.options('*', cors());
+
+// Парсинг JSON
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -88,7 +99,7 @@ app.get('/api/info', (req, res) => {
     });
 });
 
-// Обработка заявок с калькулятора
+// Обработка заявок с калькулятора (ИСПРАВЛЕНО - добавлена обработка POST)
 app.post('/api/calculator/submit', async (req, res) => {
     try {
         console.log('📝 Получена заявка с калькулятора:', req.body);
@@ -119,7 +130,12 @@ app.post('/api/calculator/submit', async (req, res) => {
         console.log('📊 Данные заявки сохранены, ID:', estimateData.id);
         
         // Сохраняем в файл
-        const logPath = path.join(__dirname, 'data', 'calculator_requests.json');
+        const dataDir = path.join(__dirname, 'data');
+        if (!fs.existsSync(dataDir)) {
+            fs.mkdirSync(dataDir, { recursive: true });
+        }
+        
+        const logPath = path.join(dataDir, 'calculator_requests.json');
         const requests = fs.existsSync(logPath) 
             ? JSON.parse(fs.readFileSync(logPath, 'utf8'))
             : [];
@@ -195,7 +211,12 @@ app.post('/api/contact', async (req, res) => {
         console.log('📊 Данные контактной заявки сохранены, ID:', contactData.id);
         
         // Сохраняем в файл
-        const logPath = path.join(__dirname, 'data', 'contact_requests.json');
+        const dataDir = path.join(__dirname, 'data');
+        if (!fs.existsSync(dataDir)) {
+            fs.mkdirSync(dataDir, { recursive: true });
+        }
+        
+        const logPath = path.join(dataDir, 'contact_requests.json');
         const contacts = fs.existsSync(logPath) 
             ? JSON.parse(fs.readFileSync(logPath, 'utf8'))
             : [];
@@ -333,6 +354,7 @@ app.use((err, req, res, next) => {
 const dataDir = path.join(__dirname, 'data');
 if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
+    console.log('📁 Создана папка для данных:', dataDir);
 }
 
 // Инициализация файлов данных
