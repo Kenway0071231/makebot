@@ -2,7 +2,7 @@
 
 # ============================================
 # MakeBot Deploy Script
-# Версия: 2.0.0
+# Версия: 2.2.0
 # ============================================
 
 set -e
@@ -38,8 +38,8 @@ check_env_file() {
         print_info "Создаю .env из примера..."
         if [ -f .env.example ]; then
             cp .env.example .env
-            print_warning "⚠️  Файл .env создан из примера"
-            print_warning "⚠️  Проверьте настройки SMTP в файле .env!"
+            print_success "Файл .env создан из примера"
+            print_warning "⚠️  Обязательно проверьте настройки SMTP в файле .env!"
             echo ""
             echo "SMTP настройки (проверьте в .env):"
             echo "  SMTP_HOST=smtp.yandex.ru"
@@ -67,7 +67,7 @@ check_env_file() {
 main() {
     echo
     echo "============================================"
-    echo "       MakeBot Deployment Script v2.0       "
+    echo "       MakeBot Deployment Script v2.2       "
     echo "============================================"
     echo
     
@@ -88,6 +88,19 @@ main() {
         exit 1
     fi
 
+    # Создаем папку для данных если её нет
+    mkdir -p backend/data
+    
+    # Инициализируем файлы данных
+    if [ ! -f "backend/data/calculator_requests.json" ]; then
+        echo '[]' > backend/data/calculator_requests.json
+        print_success "Создан файл calculator_requests.json"
+    fi
+    if [ ! -f "backend/data/contact_requests.json" ]; then
+        echo '[]' > backend/data/contact_requests.json
+        print_success "Создан файл contact_requests.json"
+    fi
+
     # Запуск проекта
     print_info "Запуск Docker контейнеров..."
     docker-compose down 2>/dev/null || true
@@ -105,7 +118,7 @@ main() {
         echo "🌐 Откройте в браузере:"
         echo "   http://localhost:3000"
         echo
-        echo "📧 Отправка заявок на:"
+        echo "📧 Email для заявок:"
         echo "   ${ADMIN_EMAIL:-Denis.Kenway@yandex.ru}"
         echo
         echo "🛠️  Команды управления:"
@@ -114,14 +127,15 @@ main() {
         echo "   Перезапуск:  docker-compose restart"
         echo "   Статус:      docker-compose ps"
         echo
-        echo "📊 Проверка здоровья:"
+        echo "📊 Проверка здоровья сервера:"
         echo "   curl http://localhost:3000/api/health"
         echo
-        echo "📧 Тест email отправки:"
+        echo "📧 Тест отправки email:"
         echo "   curl http://localhost:3000/api/test/email"
         echo
-        echo "📁 Файлы данных:"
-        echo "   Логи заявок сохраняются в папке data/"
+        echo "📁 Файлы данных заявок:"
+        echo "   backend/data/calculator_requests.json"
+        echo "   backend/data/contact_requests.json"
         echo
     else
         print_error "Ошибка запуска!"
