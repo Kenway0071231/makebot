@@ -2,9 +2,7 @@ version: '3.8'
 
 services:
   makebot:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     container_name: makebot-site
     restart: unless-stopped
     ports:
@@ -13,24 +11,11 @@ services:
       - NODE_ENV=production
       - PORT=3000
       - TZ=Europe/Moscow
-      # Telegram переменные
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
     volumes:
-      - makebot_data:/app/data
-    networks:
-      - makebot-network
+      - ./backend/data:/app/data
+      - ./frontend:/app/../frontend
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/health', (r) => {if(r.statusCode === 200) process.exit(0); else process.exit(1);})"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
-
-networks:
-  makebot-network:
-    driver: bridge
-
-volumes:
-  makebot_data:
-    name: makebot_data
