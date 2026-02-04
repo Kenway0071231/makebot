@@ -39,7 +39,7 @@
         <div class="container">
             <div class="hero-content">
                 <h1 class="hero-title animate-on-scroll">Автоматизируйте бизнес с помощью <span class="highlight">ИИ-ботов</span></h1>
-                <p class="hero-subtitle animate-on-scroll">Разрабатываем интеллектуальные чат-боты, мини-приложения и сайты, которые увеличивают продажи и сокращают расходы на 70%</p>
+                <p class="hero-subtitle animate-on-scroll">Разрабатываем интеллектуальные чат-боты, мини-приложения и сайты, которые увеличивают продажи и сокращают расходы</p>
                 <div class="hero-buttons animate-on-scroll">
                     <a href="#calculator" class="btn-primary">
                         <i class="fas fa-calculator"></i> Рассчитать стоимость
@@ -50,7 +50,7 @@
                 </div>
                 <div class="hero-stats animate-on-scroll">
                     <div class="stat">
-                        <div class="stat-number">7-14</div>
+                        <div class="stat-number">3-7</div>
                         <div class="stat-text">дней на запуск</div>
                     </div>
                     <div class="stat">
@@ -93,7 +93,7 @@
         <div class="container">
             <div class="section-header">
                 <h2><i class="fas fa-calculator"></i> Калькулятор стоимости</h2>
-                <p>Ответьте на 5 вопросов и получите точный расчет стоимости вашего проекта</p>
+                <p>Ответьте на вопросы и получите точный расчет стоимости вашего проекта</p>
             </div>
             
             <div class="calculator">
@@ -171,8 +171,8 @@
                         <div class="result-price">
                             <div class="price-main">
                                 <div class="price-label">Ориентировочная стоимость:</div>
-                                <div class="price-amount" id="priceAmount">от 45 000 ₽</div>
-                                <div class="price-range" id="priceRange">45 000 – 80 000 ₽</div>
+                                <div class="price-amount" id="priceAmount">от 7 500 ₽</div>
+                                <div class="price-range" id="priceRange">7 500 – 15 000 ₽</div>
                             </div>
                             <div class="price-details">
                                 <p><i class="fas fa-info-circle"></i> Точная стоимость будет определена после консультации с менеджером</p>
@@ -180,13 +180,53 @@
                             </div>
                         </div>
                         
-                        <div class="result-actions">
-                            <button class="btn-primary" id="contactAfterCalc">
-                                <i class="fas fa-paper-plane"></i> Обсудить проект
-                            </button>
-                            <button class="btn-secondary" id="resetCalculator">
-                                <i class="fas fa-redo"></i> Новый расчет
-                            </button>
+                        <div class="result-contact-form" id="contactFormContainer">
+                            <div class="contact-form-header">
+                                <h4><i class="fas fa-user-check"></i> Оставьте контакты для связи</h4>
+                                <p>Мы отправим вам детальный расчет и обсудим проект</p>
+                            </div>
+                            
+                            <form id="calculatorContactForm">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="calcName"><i class="fas fa-user"></i> Ваше имя *</label>
+                                        <input type="text" id="calcName" placeholder="Иван Иванов" required>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="calcPhone"><i class="fas fa-phone"></i> Телефон *</label>
+                                        <input type="tel" id="calcPhone" placeholder="+7 (XXX) XXX-XX-XX" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="calcEmail"><i class="fas fa-envelope"></i> Email (необязательно)</label>
+                                        <input type="email" id="calcEmail" placeholder="ivan@example.com">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="calcComment"><i class="fas fa-comment"></i> Комментарий (необязательно)</label>
+                                        <textarea id="calcComment" placeholder="Дополнительные пожелания или вопросы" rows="2"></textarea>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group checkbox-group">
+                                    <input type="checkbox" id="calcPrivacyPolicy" name="calcPrivacyPolicy" required>
+                                    <label for="calcPrivacyPolicy">
+                                        Я согласен на <a href="#privacyModal" class="privacy-link">обработку персональных данных</a> *
+                                    </label>
+                                </div>
+                                
+                                <div class="result-actions">
+                                    <button type="submit" class="btn-primary" id="submitCalculatorForm">
+                                        <i class="fas fa-paper-plane"></i> Получить детальный расчет
+                                    </button>
+                                    <button type="button" class="btn-secondary" id="resetCalculator">
+                                        <i class="fas fa-redo"></i> Новый расчет
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -216,8 +256,8 @@
                         <li><i class="fas fa-check"></i> Автоматические ответы</li>
                     </ul>
                     <div class="service-price">
-                        <span class="price-from">от 30 000 ₽</span>
-                        <span class="price-time">7-10 дней</span>
+                        <span class="price-from">от 7 500 ₽</span>
+                        <span class="price-time">7-14 дней</span>
                     </div>
                 </div>
                 
@@ -234,7 +274,7 @@
                         <li><i class="fas fa-check"></i> Обучение на базе знаний</li>
                     </ul>
                     <div class="service-price">
-                        <span class="price-from">от 70 000 ₽</span>
+                        <span class="price-from">от 12 500 ₽</span>
                         <span class="price-time">14-21 день</span>
                     </div>
                 </div>
@@ -252,8 +292,8 @@
                         <li><i class="fas fa-check"></i> Push-уведомления</li>
                     </ul>
                     <div class="service-price">
-                        <span class="price-from">от 50 000 ₽</span>
-                        <span class="price-time">10-14 дней</span>
+                        <span class="price-from">от 25 000 ₽</span>
+                        <span class="price-time">21-31 день</span>
                     </div>
                 </div>
                 
@@ -270,8 +310,8 @@
                         <li><i class="fas fa-check"></i> Админ-панели</li>
                     </ul>
                     <div class="service-price">
-                        <span class="price-from">от 40 000 ₽</span>
-                        <span class="price-time">7-14 дней</span>
+                        <span class="price-from">от 15 000 ₽</span>
+                        <span class="price-time">14-21 день</span>
                     </div>
                 </div>
             </div>
@@ -297,7 +337,7 @@
                         <i class="fas fa-bolt"></i>
                     </div>
                     <h3>Быстрый запуск</h3>
-                    <p>Стандартные решения запускаем за 7 дней. Индивидуальная разработка — 2-4 недели.</p>
+                    <p>Стандартные решения запускаем за 7-14 дней. Срочные проекты — 3-7 дней.</p>
                 </div>
                 
                 <div class="advantage-card animate-on-scroll">
@@ -444,6 +484,11 @@
                             </div>
                         </div>
                         
+                        <div class="form-group">
+                            <label for="message"><i class="fas fa-comment"></i> Сообщение (необязательно)</label>
+                            <textarea id="message" placeholder="Расскажите о вашем проекте или задайте вопрос" rows="4"></textarea>
+                        </div>
+                        
                         <div class="form-group checkbox-group">
                             <input type="checkbox" id="privacyPolicy" name="privacyPolicy" required>
                             <label for="privacyPolicy">
@@ -469,8 +514,7 @@
                             </div>
                             <div class="info-content">
                                 <strong>Email</strong>
-                                <p>info@makebot.ru</p>
-                                <p>sales@makebot.ru</p>
+                                <p>support@makebot.shop</p>
                             </div>
                         </div>
                         
@@ -480,8 +524,7 @@
                             </div>
                             <div class="info-content">
                                 <strong>Телефон</strong>
-                                <p>+7 (XXX) XXX-XX-XX</p>
-                                <p>Telegram: @makebot_support</p>
+                                <p>+7 (925) 151-58-31</p>
                             </div>
                         </div>
                         
@@ -494,39 +537,6 @@
                                 <p>Пн-Пт: 9:00-18:00</p>
                                 <p>Сб-Вс: по договоренности</p>
                             </div>
-                        </div>
-                        
-                        <div class="info-item">
-                            <div class="info-icon">
-                                <i class="fas fa-map-marker-alt"></i>
-                            </div>
-                            <div class="info-content">
-                                <strong>Адрес</strong>
-                                <p>Москва, ул. Примерная, д. 1</p>
-                                <p>Работаем по всей России</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="social-card">
-                        <h3><i class="fas fa-share-alt"></i> Мы в соцсетях</h3>
-                        <div class="social-links">
-                            <a href="#" class="social-link telegram">
-                                <i class="fab fa-telegram"></i>
-                                <span>Telegram</span>
-                            </a>
-                            <a href="#" class="social-link whatsapp">
-                                <i class="fab fa-whatsapp"></i>
-                                <span>WhatsApp</span>
-                            </a>
-                            <a href="#" class="social-link vk">
-                                <i class="fab fa-vk"></i>
-                                <span>ВКонтакте</span>
-                            </a>
-                            <a href="#" class="social-link max">
-                                <i class="fas fa-comment"></i>
-                                <span>MAX</span>
-                            </a>
                         </div>
                     </div>
                     
@@ -557,7 +567,7 @@
                         <i class="fas fa-chevron-down"></i>
                     </div>
                     <div class="faq-answer">
-                        <p>Стандартный чат-бот — 7-10 дней. ИИ-бот с нейросетями — 14-21 день. Мини-приложения — 10-14 дней. Сайты — 7-14 дней. Сроки зависят от сложности проекта.</p>
+                        <p>Самый быстрый проект — простой чат-бот — 3-7 дней. Самый долгий — сложное мини-приложение с интеграциями — до 31 дня. Большинство проектов занимает 7-21 день.</p>
                     </div>
                 </div>
                 
@@ -587,7 +597,7 @@
                         <i class="fas fa-chevron-down"></i>
                     </div>
                     <div class="faq-answer">
-                        <p>Банковский перевод, онлайн-оплата картой, СБП, криптовалюты. Работаем с ИП и ООО, предоставляем все закрывающие документы.</p>
+                        <p>Банковский перевод, онлайн-оплата картой, СБП. Работаем с ИП и ООО, предоставляем все закрывающие документы.</p>
                     </div>
                 </div>
             </div>
@@ -617,7 +627,6 @@
                             <li><a href="#services">ИИ-боты</a></li>
                             <li><a href="#services">Мини-приложения</a></li>
                             <li><a href="#services">Разработка сайтов</a></li>
-                            <li><a href="#services">Техническая поддержка</a></li>
                         </ul>
                     </div>
                     
@@ -627,8 +636,7 @@
                             <li><a href="#process">Как работаем</a></li>
                             <li><a href="#advantages">Преимущества</a></li>
                             <li><a href="#contact">Контакты</a></li>
-                            <li><a href="#">О нас</a></li>
-                            <li><a href="#">Портфолио</a></li>
+                            <li><a href="#calculator">Калькулятор</a></li>
                         </ul>
                     </div>
                     
@@ -637,8 +645,6 @@
                         <ul>
                             <li><a href="#privacyModal" class="privacy-link">Политика конфиденциальности</a></li>
                             <li><a href="#">Пользовательское соглашение</a></li>
-                            <li><a href="#">Оферта</a></li>
-                            <li><a href="#">Реквизиты</a></li>
                         </ul>
                     </div>
                 </div>
@@ -651,7 +657,6 @@
                 <div class="footer-payments">
                     <i class="fab fa-cc-visa"></i>
                     <i class="fab fa-cc-mastercard"></i>
-                    <i class="fab fa-cc-paypal"></i>
                     <i class="fas fa-university"></i>
                 </div>
                 <div class="footer-stats">
@@ -669,7 +674,7 @@
                 <i class="fas fa-check-circle"></i>
             </div>
             <h3>Заявка отправлена!</h3>
-            <p>Спасибо за вашу заявку. Наш менеджер свяжется с вами в течение 30 минут.</p>
+            <p id="successMessage">Спасибо за вашу заявку. Наш менеджер свяжется с вами в течение 30 минут.</p>
             <button class="btn-primary" id="closeModal">OK</button>
         </div>
     </div>
@@ -706,7 +711,7 @@
                 <p>Безопасность персональных данных, которые обрабатываются Оператором, обеспечивается путем реализации правовых, организационных и технических мер, необходимых для выполнения в полном объеме требования действующего законодательства в области защиты персональных данных.</p>
                 
                 <h4>7. Заключительные положения</h4>
-                <p>Пользователь может получить любые разъяснения по интересующим вопросам, касающимся обработки его персональных данных, обратившись к Оператору с помощью электронной почты info@makebot.ru.</p>
+                <p>Пользователь может получить любые разъяснения по интересующим вопросам, касающимся обработки его персональных данных, обратившись к Оператору с помощью электронной почты support@makebot.shop.</p>
             </div>
             <div class="modal-footer">
                 <button class="btn-primary" id="acceptPrivacyPolicy">Принимаю</button>
