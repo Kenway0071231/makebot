@@ -1,6 +1,6 @@
 /**
  * MakeBot Backend Server
- * Версия 2.2 (без Telegram)
+ * Версия 2.2.0 (с исправленной отправкой email)
  */
 
 const express = require('express');
@@ -31,6 +31,11 @@ const config = {
 // ============================================
 function createEmailTransporter() {
     try {
+        console.log('🔧 Настройка SMTP...');
+        console.log('SMTP_HOST:', process.env.SMTP_HOST || 'smtp.yandex.ru');
+        console.log('SMTP_USER:', process.env.SMTP_USER || 'support@makebot.store');
+        console.log('ADMIN_EMAIL:', process.env.ADMIN_EMAIL || 'Denis.Kenway@yandex.ru');
+        
         const transporter = nodemailer.createTransport({
             host: process.env.SMTP_HOST || 'smtp.yandex.ru',
             port: parseInt(process.env.SMTP_PORT) || 465,
@@ -278,6 +283,10 @@ async function sendEmail(subject, html, text) {
         };
         
         console.log('📤 Отправка письма...');
+        console.log('От кого:', mailOptions.from);
+        console.log('Кому:', mailOptions.to);
+        console.log('Тема:', mailOptions.subject);
+        
         const info = await emailTransporter.sendMail(mailOptions);
         console.log(`✅ Письмо отправлено: ${info.messageId}`);
         
@@ -289,6 +298,7 @@ async function sendEmail(subject, html, text) {
         
     } catch (error) {
         console.error('❌ Ошибка отправки письма:', error.message);
+        console.error('Детали ошибки:', error);
         return { 
             success: false, 
             error: error.message
@@ -361,7 +371,7 @@ app.get('/api/info', (req, res) => {
 
 // Валидация JSON
 const validateJSON = (req, res, next) => {
-    if (req.method === 'POST' && req.headers['content-type'] !== 'application/json') {
+    if (req.method === 'POST' && req.headers['content-type'] && !req.headers['content-type'].includes('application/json')) {
         console.warn('⚠️  Неправильный Content-Type:', req.headers['content-type']);
         return res.status(415).json({
             success: false,
@@ -375,6 +385,7 @@ const validateJSON = (req, res, next) => {
 app.post('/api/calculator/submit', validateJSON, async (req, res) => {
     try {
         console.log('📝 Получена заявка с калькулятора');
+        console.log('Данные:', JSON.stringify(req.body));
         
         const { name, phone, email, comment, calculation } = req.body;
         
@@ -446,7 +457,7 @@ app.post('/api/calculator/submit', validateJSON, async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Ошибка при обработке заявки. Пожалуйста, попробуйте еще раз.',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            error: error.message
         });
     }
 });
@@ -455,6 +466,7 @@ app.post('/api/calculator/submit', validateJSON, async (req, res) => {
 app.post('/api/contact', validateJSON, async (req, res) => {
     try {
         console.log('📝 Получена контактная заявка');
+        console.log('Данные:', JSON.stringify(req.body));
         
         const { name, phone, message } = req.body;
         
@@ -523,7 +535,7 @@ app.post('/api/contact', validateJSON, async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Произошла ошибка при отправке заявки. Пожалуйста, попробуйте еще раз.',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            error: error.message
         });
     }
 });
@@ -554,9 +566,10 @@ app.get('/api/test/email', async (req, res) => {
         };
         
         const html = `
-            <h1>Тестовое письмо</h1>
-            <p>Это тестовое письмо от MakeBot сервера.</p>
-            <p>Время: ${new Date().toLocaleString('ru-RU')}</p>
+            <h1>Тестовое письмо от MakeBot</h1>
+            <p>Это тестовое письмо от сервера MakeBot v${config.version}.</p>
+            <p>Время отправки: ${new Date().toLocaleString('ru-RU')}</p>
+            <p>Если вы видите это письмо, значит email отправка настроена правильно!</p>
         `;
         
         const result = await sendEmail('🔧 Тестовое письмо от MakeBot', html, 'Тестовое письмо');
@@ -667,7 +680,7 @@ app.use((err, req, res, next) => {
     res.status(500).json({
         success: false,
         message: 'Внутренняя ошибка сервера',
-        error: process.env.NODE_ENV === 'development' ? err.message : undefined
+        error: err.message
     });
 });
 
@@ -698,7 +711,7 @@ dataFiles.forEach(file => {
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`
     ========================================
-    MakeBot Server v${config.version} (без Telegram)
+    MakeBot Server v${config.version} (с исправленной отправкой email)
     ========================================
     🚀 Сервер запущен на порту: ${PORT}
     🌐 Доступен по адресу: http://0.0.0.0:${PORT}
@@ -718,4 +731,11 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log('   POST /api/calculator/submit - отправка заявки с калькулятора');
     console.log('   POST /api/contact        - отправка контактной формы');
     console.log('   GET  /                   - главная страница сайта');
+    
+    // Предупреждение о настройках email
+    if (!emailTransporter) {
+        console.log('\n⚠️  ВНИМАНИЕ: Email не настроен!');
+        console.log('   Заявки не будут приходить на почту.');
+        console.log('   Проверьте настройки SMTP в файле .env');
+    }
 });
