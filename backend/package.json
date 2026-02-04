@@ -10,7 +10,8 @@
     "clean": "rm -rf data/*.json node_modules",
     "docker:build": "docker build -t makebot .",
     "docker:run": "docker run -p 3000:3000 makebot",
-    "env:check": "node -e \"const fs = require('fs'); if(!fs.existsSync('.env')) { console.log('⚠️  Файл .env отсутствует!'); console.log('   Скопируйте .env.example в .env и заполните настройки'); process.exit(1); } console.log('✅ Файл .env найден');\""
+    "env:check": "node -e \"const fs = require('fs'); if(!fs.existsSync('.env')) { console.log('⚠️  Файл .env отсутствует!'); console.log('   Скопируйте .env.example в .env и заполните настройки'); process.exit(1); } console.log('✅ Файл .env найден');\"",
+    "test:email": "node -e \"const nodemailer = require('nodemailer'); const transporter = nodemailer.createTransport({ host: process.env.SMTP_HOST || 'smtp.yandex.ru', port: parseInt(process.env.SMTP_PORT) || 465, secure: true, auth: { user: process.env.SMTP_USER || 'support@makebot.store', pass: process.env.SMTP_PASS || 'Deniska040406' } }); transporter.verify(function(error, success) { if (error) { console.log('❌ Ошибка SMTP:', error.message); process.exit(1); } else { console.log('✅ SMTP настроен корректно'); process.exit(0); } });\""
   },
   "keywords": [
     "chatbot",
