@@ -1,14 +1,16 @@
 /**
  * MakeBot Backend Server
- * Версия 2.0
+ * Версия 2.1
  */
 
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-const nodemailer = require('nodemailer');
 require('dotenv').config();
+
+// Импорт Telegram модуля
+const telegram = require('./config/telegram');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,7 +20,7 @@ const PORT = process.env.PORT || 3000;
 // ============================================
 const config = {
     name: 'MakeBot API',
-    version: '2.0.0',
+    version: '2.1.0',
     contact: {
         email: 'support@makebot.shop',
         phone: '+7 (925) 151-58-31',
@@ -29,7 +31,7 @@ const config = {
 // ============================================
 // ПРОВЕРКА ПЕРЕМЕННЫХ ОКРУЖЕНИЯ
 // ============================================
-const requiredEnvVars = ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'ADMIN_EMAIL'];
+const requiredEnvVars = ['TELEGRAM_BOT_TOKEN', 'TELEGRAM_CHAT_ID'];
 const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
 if (missingEnvVars.length > 0) {
@@ -37,33 +39,11 @@ if (missingEnvVars.length > 0) {
     console.warn('   Создайте файл .env на основе .env.example');
 }
 
-// ============================================
-// НАСТРОЙКА ПОЧТОВОГО КЛИЕНТА
-// ============================================
-let mailTransporter;
-
-try {
-    mailTransporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST || 'smtp.yandex.ru',
-        port: parseInt(process.env.SMTP_PORT) || 465,
-        secure: true,
-        auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS
-        }
-    });
-
-    // Проверка подключения к SMTP
-    mailTransporter.verify((error, success) => {
-        if (error) {
-            console.error('❌ Ошибка подключения к SMTP:', error.message);
-        } else {
-            console.log('✅ SMTP подключение успешно установлено');
-        }
-    });
-} catch (error) {
-    console.error('❌ Ошибка создания почтового транспорта:', error.message);
-    mailTransporter = null;
+// Проверка Telegram
+if (telegram.validateTelegramEnv()) {
+    console.log('✅ Telegram настроен');
+} else {
+    console.warn('⚠️  Telegram не настроен, заявки не будут отправляться');
 }
 
 // ============================================
@@ -91,7 +71,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
-// Информация о сервере
+// Информация о сервера
 app.get('/api/info', (req, res) => {
     res.json({
         success: true,
@@ -100,7 +80,7 @@ app.get('/api/info', (req, res) => {
             version: config.version,
             serverTime: new Date().toISOString(),
             contact: config.contact,
-            smtpConfigured: !!mailTransporter
+            telegramConfigured: telegram.validateTelegramEnv()
         }
     });
 });
@@ -139,38 +119,13 @@ app.post('/api/calculator/submit', async (req, res) => {
         requests.push(estimateData);
         fs.writeFileSync(logPath, JSON.stringify(requests, null, 2));
         
-        // Отправляем письмо администратору
-        if (mailTransporter) {
-            try {
-                const mailOptions = {
-                    from: `"MakeBot" <${process.env.SMTP_USER}>`,
-                    to: process.env.ADMIN_EMAIL,
-                    subject: `✅ Новая заявка с калькулятора #${estimateData.id}`,
-                    html: generateCalculatorEmailHtml(estimateData)
-                };
-                
-                await mailTransporter.sendMail(mailOptions);
-                console.log(`📧 Письмо с заявкой #${estimateData.id} отправлено администратору`);
-                
-                // Отправляем копию клиенту, если указан email
-                if (email) {
-                    const clientMailOptions = {
-                        from: `"MakeBot" <${process.env.SMTP_USER}>`,
-                        to: email,
-                        subject: `Ваш расчет стоимости от MakeBot`,
-                        html: generateClientEmailHtml(estimateData)
-                    };
-                    
-                    await mailTransporter.sendMail(clientMailOptions);
-                    console.log(`📧 Копия письма отправлена клиенту: ${email}`);
-                }
-                
-            } catch (mailError) {
-                console.error('❌ Ошибка отправки письма:', mailError.message);
-                // Не прерываем выполнение, если письмо не отправилось
-            }
-        } else {
-            console.warn('⚠️  SMTP не настроен, письмо не отправлено');
+        // Отправляем в Telegram
+        try {
+            await telegram.sendCalculatorRequest(estimateData);
+            console.log(`✅ Заявка с калькулятора #${estimateData.id} отправлена в Telegram`);
+        } catch (telegramError) {
+            console.error('❌ Ошибка отправки в Telegram:', telegramError.message);
+            // Не прерываем выполнение, если Telegram не отправился
         }
         
         res.json({
@@ -226,22 +181,12 @@ app.post('/api/contact', async (req, res) => {
         contacts.push(contactData);
         fs.writeFileSync(logPath, JSON.stringify(contacts, null, 2));
         
-        // Отправляем письмо администратору
-        if (mailTransporter) {
-            try {
-                const mailOptions = {
-                    from: `"MakeBot" <${process.env.SMTP_USER}>`,
-                    to: process.env.ADMIN_EMAIL,
-                    subject: `📞 Новая контактная заявка #${contactData.id}`,
-                    html: generateContactEmailHtml(contactData)
-                };
-                
-                await mailTransporter.sendMail(mailOptions);
-                console.log(`📧 Письмо с контактной заявкой #${contactData.id} отправлено администратору`);
-                
-            } catch (mailError) {
-                console.error('❌ Ошибка отправки письма:', mailError.message);
-            }
+        // Отправляем в Telegram
+        try {
+            await telegram.sendContactRequest(contactData);
+            console.log(`✅ Контактная заявка #${contactData.id} отправлена в Telegram`);
+        } catch (telegramError) {
+            console.error('❌ Ошибка отправки в Telegram:', telegramError.message);
         }
         
         res.json({
@@ -271,7 +216,7 @@ app.get('/api/stats', (req, res) => {
             totalContactRequests: 0,
             todayCalculatorRequests: 0,
             todayContactRequests: 0,
-            smtpStatus: !!mailTransporter
+            telegramStatus: telegram.validateTelegramEnv()
         };
         
         // Чтение из файлов
@@ -321,307 +266,11 @@ app.get('/api/health', (req, res) => {
             timestamp: new Date().toISOString(),
             uptime: process.uptime(),
             memory: process.memoryUsage(),
-            smtp: !!mailTransporter,
+            telegram: telegram.validateTelegramEnv(),
             env: missingEnvVars.length > 0 ? `⚠️ Missing: ${missingEnvVars.join(', ')}` : '✅ OK'
         }
     });
 });
-
-// ============================================
-// ГЕНЕРАТОРЫ HTML ДЛЯ ПИСЕМ
-// ============================================
-
-function generateCalculatorEmailHtml(data) {
-    const calculation = data.calculation;
-    return `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Новая заявка с калькулятора #${data.id}</title>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: #4361ee; color: white; padding: 20px; border-radius: 8px 8px 0 0; }
-        .content { background: #f8f9fa; padding: 20px; border-radius: 0 0 8px 8px; }
-        .section { margin-bottom: 20px; }
-        .section-title { color: #4361ee; font-weight: bold; margin-bottom: 10px; }
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .info-item { margin-bottom: 8px; }
-        .info-label { font-weight: bold; color: #666; }
-        .calculation { background: white; padding: 15px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #4361ee; }
-        .price { font-size: 24px; font-weight: bold; color: #4361ee; }
-        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🚀 Новая заявка с калькулятора</h1>
-            <p>ID: #${data.id} | ${new Date(data.timestamp).toLocaleString('ru-RU')}</p>
-        </div>
-        
-        <div class="content">
-            <div class="section">
-                <div class="section-title">👤 Контактная информация</div>
-                <div class="info-grid">
-                    <div class="info-item">
-                        <div class="info-label">Имя:</div>
-                        <div>${data.name}</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">Телефон:</div>
-                        <div>${data.phone}</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">Email:</div>
-                        <div>${data.email || 'Не указан'}</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">IP:</div>
-                        <div>${data.ip}</div>
-                    </div>
-                </div>
-            </div>
-            
-            ${data.comment ? `
-            <div class="section">
-                <div class="section-title">💬 Комментарий клиента</div>
-                <div style="background: #fff3cd; padding: 10px; border-radius: 5px; border-left: 4px solid #ffc107;">
-                    ${data.comment}
-                </div>
-            </div>
-            ` : ''}
-            
-            <div class="section">
-                <div class="section-title">📊 Расчет стоимости</div>
-                <div class="calculation">
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <div class="info-label">Тип проекта:</div>
-                            <div>${calculation.projectType}</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">Платформы:</div>
-                            <div>${calculation.platforms}</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">Интеграции:</div>
-                            <div>${calculation.integrations}</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">Сложность:</div>
-                            <div>${calculation.complexity}</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">Срочность:</div>
-                            <div>${calculation.deadline}</div>
-                        </div>
-                    </div>
-                    
-                    <div style="margin-top: 20px; text-align: center;">
-                        <div class="price">${formatPrice(calculation.totalPrice)} ₽</div>
-                        <div>Диапазон: ${formatPrice(calculation.minPrice)} – ${formatPrice(calculation.maxPrice)} ₽</div>
-                        <div style="color: #666; margin-top: 5px;">Сроки: ${calculation.timeline.total}</div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="footer">
-                <p>📧 Это автоматическое письмо с сайта MakeBot.</p>
-                <p>🕐 Время получения: ${new Date(data.timestamp).toLocaleString('ru-RU')}</p>
-                <p>📍 IP клиента: ${data.ip} | User-Agent: ${data.userAgent}</p>
-            </div>
-        </div>
-    </div>
-</body>
-</html>
-    `;
-}
-
-function generateClientEmailHtml(data) {
-    const calculation = data.calculation;
-    return `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Ваш расчет стоимости от MakeBot</title>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #4361ee, #7209b7); color: white; padding: 30px; border-radius: 8px 8px 0 0; text-align: center; }
-        .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }
-        .section { margin-bottom: 25px; }
-        .section-title { color: #4361ee; font-weight: bold; margin-bottom: 15px; font-size: 18px; border-bottom: 2px solid #4361ee; padding-bottom: 5px; }
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .info-item { margin-bottom: 12px; }
-        .info-label { font-weight: bold; color: #666; }
-        .calculation { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border: 2px solid #eef2ff; }
-        .price { font-size: 32px; font-weight: bold; color: #4361ee; text-align: center; margin: 15px 0; }
-        .timeline { background: #eef2ff; padding: 15px; border-radius: 5px; margin: 15px 0; }
-        .timeline-item { display: flex; justify-content: space-between; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #d1d9ff; }
-        .timeline-item:last-child { border-bottom: none; }
-        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 14px; color: #666; text-align: center; }
-        .contact-info { background: #fff3cd; padding: 15px; border-radius: 5px; margin: 15px 0; }
-        .btn { display: inline-block; background: #4361ee; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 10px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🤖 Спасибо за обращение в MakeBot!</h1>
-            <p>Ваш расчет стоимости готов</p>
-        </div>
-        
-        <div class="content">
-            <div class="section">
-                <div class="section-title">📋 Ваши параметры проекта</div>
-                <div class="info-grid">
-                    <div class="info-item">
-                        <div class="info-label">Тип проекта:</div>
-                        <div>${calculation.projectType}</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">Платформы:</div>
-                        <div>${calculation.platforms}</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">Интеграции:</div>
-                        <div>${calculation.integrations}</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">Сложность:</div>
-                        <div>${calculation.complexity}</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">Срочность:</div>
-                        <div>${calculation.deadline}</div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="section">
-                <div class="section-title">💰 Расчет стоимости</div>
-                <div class="calculation">
-                    <div class="price">от ${formatPrice(calculation.totalPrice)} ₽</div>
-                    <div style="text-align: center; color: #666; margin-bottom: 20px;">
-                        Диапазон: ${formatPrice(calculation.minPrice)} – ${formatPrice(calculation.maxPrice)} ₽
-                    </div>
-                    
-                    <div class="timeline">
-                        <div class="section-title">📅 Сроки разработки</div>
-                        <div class="timeline-item">
-                            <span>Проектирование:</span>
-                            <strong>${calculation.timeline.planning}</strong>
-                        </div>
-                        <div class="timeline-item">
-                            <span>Разработка:</span>
-                            <strong>${calculation.timeline.development}</strong>
-                        </div>
-                        <div class="timeline-item">
-                            <span>Тестирование:</span>
-                            <strong>${calculation.timeline.testing}</strong>
-                        </div>
-                        <div class="timeline-item" style="border-top: 2px solid #4361ee; padding-top: 10px; margin-top: 10px;">
-                            <span><strong>Общий срок:</strong></span>
-                            <strong style="color: #4361ee;">${calculation.timeline.total}</strong>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="contact-info">
-                <div class="section-title">📞 Свяжитесь с нами</div>
-                <p>Наш менеджер свяжется с вами в течение 30 минут для уточнения деталей и подготовки окончательного предложения.</p>
-                <p><strong>Телефон:</strong> +7 (925) 151-58-31</p>
-                <p><strong>Email:</strong> support@makebot.shop</p>
-                <div style="text-align: center; margin-top: 20px;">
-                    <a href="tel:+79251515831" class="btn">📞 Позвонить сейчас</a>
-                </div>
-            </div>
-            
-            <div class="footer">
-                <p>С уважением, команда MakeBot 🤖</p>
-                <p>Создаем будущее автоматизации бизнеса</p>
-                <p>📍 ID заявки: #${data.id}</p>
-                <p>🕐 ${new Date(data.timestamp).toLocaleString('ru-RU')}</p>
-            </div>
-        </div>
-    </div>
-</body>
-</html>
-    `;
-}
-
-function generateContactEmailHtml(data) {
-    return `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Новая контактная заявка #${data.id}</title>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: #7209b7; color: white; padding: 20px; border-radius: 8px 8px 0 0; }
-        .content { background: #f8f9fa; padding: 20px; border-radius: 0 0 8px 8px; }
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .info-item { margin-bottom: 15px; }
-        .info-label { font-weight: bold; color: #666; }
-        .message { background: white; padding: 15px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #7209b7; }
-        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>📞 Новая контактная заявка</h1>
-            <p>ID: #${data.id} | ${new Date(data.timestamp).toLocaleString('ru-RU')}</p>
-        </div>
-        
-        <div class="content">
-            <div class="info-grid">
-                <div class="info-item">
-                    <div class="info-label">Имя:</div>
-                    <div>${data.name}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Телефон:</div>
-                    <div>${data.phone}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">IP:</div>
-                    <div>${data.ip}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Время:</div>
-                    <div>${new Date(data.timestamp).toLocaleString('ru-RU')}</div>
-                </div>
-            </div>
-            
-            ${data.message ? `
-            <div class="info-item">
-                <div class="info-label">Сообщение:</div>
-                <div class="message">${data.message}</div>
-            </div>
-            ` : '<div class="info-item"><em>Сообщение не указано</em></div>'}
-            
-            <div class="footer">
-                <p>📧 Это автоматическое письмо с сайта MakeBot.</p>
-                <p>📍 IP клиента: ${data.ip}</p>
-                <p>🌐 User-Agent: ${data.userAgent}</p>
-            </div>
-        </div>
-    </div>
-</body>
-</html>
-    `;
-}
-
-function formatPrice(price) {
-    return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-}
 
 // ============================================
 // ОБРАБОТКА ОШИБОК
@@ -679,8 +328,7 @@ app.listen(PORT, () => {
     🌐 Доступен по адресу: http://localhost:${PORT}
     📧 Контакт: ${config.contact.email}
     📞 Телефон: ${config.contact.phone}
-    📨 Админ email: ${config.contact.adminEmail}
-    🔐 SMTP: ${mailTransporter ? '✅ Настроен' : '❌ Не настроен'}
+    📱 Telegram: ${telegram.validateTelegramEnv() ? '✅ Настроен' : '❌ Не настроен'}
     ${missingEnvVars.length > 0 ? `⚠️  Отсутствуют: ${missingEnvVars.join(', ')}` : '✅ Все переменные окружения настроены'}
     ========================================
     `);
