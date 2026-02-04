@@ -5,7 +5,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: production
     container_name: makebot-site
     restart: unless-stopped
     ports:
@@ -14,10 +13,25 @@ services:
       - NODE_ENV=production
       - PORT=3000
       - TZ=Europe/Moscow
+      # Переменные окружения можно задать здесь или в файле .env
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
     volumes:
       - makebot_data:/app/data
+      # Для разработки можно монтировать исходный код
+      # - ./backend:/app
+      # - ./frontend:/app/../frontend
     networks:
       - makebot-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/health', (r) => {if(r.statusCode === 200) process.exit(0); else process.exit(1);})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 networks:
   makebot-network:
