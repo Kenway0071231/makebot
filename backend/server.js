@@ -37,11 +37,14 @@ const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
 if (missingEnvVars.length > 0) {
     console.warn('⚠️  Внимание: отсутствуют переменные окружения:', missingEnvVars);
     console.warn('   Создайте файл .env на основе .env.example');
+} else {
+    console.log('✅ Все переменные окружения найдены');
+    console.log('📱 Telegram Chat ID:', process.env.TELEGRAM_CHAT_ID);
 }
 
 // Проверка Telegram
 if (telegram.validateTelegramEnv()) {
-    console.log('✅ Telegram настроен');
+    console.log('✅ Telegram настроен корректно');
 } else {
     console.warn('⚠️  Telegram не настроен, заявки не будут отправляться');
 }
@@ -71,7 +74,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
-// Информация о сервера
+// Информация о сервере
 app.get('/api/info', (req, res) => {
     res.json({
         success: true,
@@ -88,9 +91,12 @@ app.get('/api/info', (req, res) => {
 // Обработка заявок с калькулятора
 app.post('/api/calculator/submit', async (req, res) => {
     try {
+        console.log('📝 Получена заявка с калькулятора:', req.body);
+        
         const { name, phone, email, comment, calculation } = req.body;
         
         if (!name || !phone || !calculation) {
+            console.log('❌ Недостаточно данных в заявке');
             return res.status(400).json({
                 success: false,
                 message: 'Недостаточно данных для обработки заявки'
@@ -106,9 +112,11 @@ app.post('/api/calculator/submit', async (req, res) => {
             email: email || null,
             comment: comment || null,
             calculation,
-            ip: req.ip,
+            ip: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
             userAgent: req.get('User-Agent')
         };
+        
+        console.log('📊 Данные заявки сохранены, ID:', estimateData.id);
         
         // Сохраняем в файл
         const logPath = path.join(__dirname, 'data', 'calculator_requests.json');
@@ -120,11 +128,19 @@ app.post('/api/calculator/submit', async (req, res) => {
         fs.writeFileSync(logPath, JSON.stringify(requests, null, 2));
         
         // Отправляем в Telegram
+        let telegramResult = null;
         try {
-            await telegram.sendCalculatorRequest(estimateData);
-            console.log(`✅ Заявка с калькулятора #${estimateData.id} отправлена в Telegram`);
+            console.log('📤 Попытка отправки в Telegram...');
+            telegramResult = await telegram.sendCalculatorRequest(estimateData);
+            
+            if (telegramResult.success) {
+                console.log(`✅ Заявка с калькулятора #${estimateData.id} отправлена в Telegram`);
+            } else {
+                console.error('❌ Ошибка отправки в Telegram:', telegramResult.error);
+                // Не прерываем выполнение, если Telegram не отправился
+            }
         } catch (telegramError) {
-            console.error('❌ Ошибка отправки в Telegram:', telegramError.message);
+            console.error('❌ Исключение при отправке в Telegram:', telegramError.message);
             // Не прерываем выполнение, если Telegram не отправился
         }
         
@@ -135,12 +151,13 @@ app.post('/api/calculator/submit', async (req, res) => {
                 requestId: estimateData.id,
                 name,
                 phone,
-                email: email || null
+                email: email || null,
+                telegramSent: telegramResult?.success || false
             }
         });
         
     } catch (error) {
-        console.error('Ошибка при обработке заявки с калькулятора:', error);
+        console.error('❌ Ошибка при обработке заявки с калькулятора:', error);
         res.status(500).json({
             success: false,
             message: 'Ошибка при обработке заявки. Пожалуйста, попробуйте еще раз.'
@@ -151,10 +168,13 @@ app.post('/api/calculator/submit', async (req, res) => {
 // Обработка контактной формы
 app.post('/api/contact', async (req, res) => {
     try {
+        console.log('📝 Получена контактная заявка:', req.body);
+        
         const { name, phone, message } = req.body;
         
         // Валидация
         if (!name || !phone) {
+            console.log('❌ Недостаточно данных в контактной форме');
             return res.status(400).json({
                 success: false,
                 message: 'Пожалуйста, заполните обязательные поля'
@@ -168,9 +188,11 @@ app.post('/api/contact', async (req, res) => {
             name,
             phone,
             message: message || null,
-            ip: req.ip,
+            ip: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
             userAgent: req.get('User-Agent')
         };
+        
+        console.log('📊 Данные контактной заявки сохранены, ID:', contactData.id);
         
         // Сохраняем в файл
         const logPath = path.join(__dirname, 'data', 'contact_requests.json');
@@ -182,11 +204,18 @@ app.post('/api/contact', async (req, res) => {
         fs.writeFileSync(logPath, JSON.stringify(contacts, null, 2));
         
         // Отправляем в Telegram
+        let telegramResult = null;
         try {
-            await telegram.sendContactRequest(contactData);
-            console.log(`✅ Контактная заявка #${contactData.id} отправлена в Telegram`);
+            console.log('📤 Попытка отправки контактной заявки в Telegram...');
+            telegramResult = await telegram.sendContactRequest(contactData);
+            
+            if (telegramResult.success) {
+                console.log(`✅ Контактная заявка #${contactData.id} отправлена в Telegram`);
+            } else {
+                console.error('❌ Ошибка отправки контактной заявки в Telegram:', telegramResult.error);
+            }
         } catch (telegramError) {
-            console.error('❌ Ошибка отправки в Telegram:', telegramError.message);
+            console.error('❌ Исключение при отправке контактной заявки в Telegram:', telegramError.message);
         }
         
         res.json({
@@ -195,12 +224,13 @@ app.post('/api/contact', async (req, res) => {
             data: {
                 contactId: contactData.id,
                 name,
-                phone
+                phone,
+                telegramSent: telegramResult?.success || false
             }
         });
         
     } catch (error) {
-        console.error('Ошибка при обработке контактной формы:', error);
+        console.error('❌ Ошибка при обработке контактной формы:', error);
         res.status(500).json({
             success: false,
             message: 'Произошла ошибка при отправке заявки. Пожалуйста, попробуйте еще раз.'
