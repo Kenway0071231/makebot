@@ -1,4 +1,3 @@
-cat > frontend/index.html << 'EOF'
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -23,6 +22,7 @@ cat > frontend/index.html << 'EOF'
                 </a>
                 <div class="nav-links">
                     <a href="#services"><i class="fas fa-cogs"></i> Услуги</a>
+                    <a href="#calculator"><i class="fas fa-calculator"></i> Калькулятор</a>
                     <a href="#advantages"><i class="fas fa-star"></i> Преимущества</a>
                     <a href="#process"><i class="fas fa-play-circle"></i> Как работаем</a>
                     <a href="#contact" class="btn-outline nav-contact-btn"><i class="fas fa-phone-alt"></i> Связаться</a>
@@ -39,13 +39,16 @@ cat > frontend/index.html << 'EOF'
         <div class="container">
             <div class="hero-content">
                 <h1 class="hero-title animate-on-scroll">Автоматизируйте бизнес с помощью <span class="highlight">ИИ-ботов</span></h1>
-                <p class="hero-subtitle animate-on-scroll" data-delay="0.2s">Разрабатываем интеллектуальные чат-боты, мини-приложения и сайты, которые увеличивают продажи и сокращают расходы на 70%</p>
-                <div class="hero-buttons animate-on-scroll" data-delay="0.4s">
-                    <a href="#contact" class="btn-primary">
+                <p class="hero-subtitle animate-on-scroll">Разрабатываем интеллектуальные чат-боты, мини-приложения и сайты, которые увеличивают продажи и сокращают расходы на 70%</p>
+                <div class="hero-buttons animate-on-scroll">
+                    <a href="#calculator" class="btn-primary">
+                        <i class="fas fa-calculator"></i> Рассчитать стоимость
+                    </a>
+                    <a href="#contact" class="btn-secondary">
                         <i class="fas fa-headset"></i> Бесплатная консультация
                     </a>
                 </div>
-                <div class="hero-stats animate-on-scroll" data-delay="0.6s">
+                <div class="hero-stats animate-on-scroll">
                     <div class="stat">
                         <div class="stat-number">7-14</div>
                         <div class="stat-text">дней на запуск</div>
@@ -65,25 +68,127 @@ cat > frontend/index.html << 'EOF'
                 </div>
             </div>
             <div class="hero-visual">
-                <div class="visual-element animate-float" data-delay="0.1s">
+                <div class="visual-element animate-on-scroll">
                     <i class="fas fa-comment-dots"></i>
                     <span>Чат-боты</span>
                 </div>
-                <div class="visual-element animate-float" data-delay="0.2s">
+                <div class="visual-element animate-on-scroll">
                     <i class="fas fa-brain"></i>
                     <span>ИИ решения</span>
                 </div>
-                <div class="visual-element animate-float" data-delay="0.3s">
+                <div class="visual-element animate-on-scroll">
                     <i class="fas fa-mobile-alt"></i>
                     <span>Мини-приложения</span>
                 </div>
-                <div class="visual-element animate-float" data-delay="0.4s">
+                <div class="visual-element animate-on-scroll">
                     <i class="fas fa-code"></i>
                     <span>Сайты</span>
                 </div>
-                <div class="visual-element animate-float" data-delay="0.5s">
-                    <i class="fas fa-fire"></i>
-                    <span>MAX приложение</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Калькулятор -->
+    <section id="calculator" class="calculator-section">
+        <div class="container">
+            <div class="section-header">
+                <h2><i class="fas fa-calculator"></i> Калькулятор стоимости</h2>
+                <p>Ответьте на 5 вопросов и получите точный расчет стоимости вашего проекта</p>
+            </div>
+            
+            <div class="calculator">
+                <div class="calculator-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text">Вопрос <span id="currentQuestion">1</span> из 5</div>
+                </div>
+                
+                <div class="calculator-content">
+                    <div class="question-container" id="questionContainer">
+                        <!-- Вопросы загружаются через JS -->
+                    </div>
+                    
+                    <div class="calculator-result" id="resultContainer">
+                        <div class="result-header">
+                            <h3><i class="fas fa-file-invoice-dollar"></i> Расчет стоимости</h3>
+                            <p class="result-subtitle">Предварительный расчет на основе ваших ответов</p>
+                        </div>
+                        
+                        <div class="result-summary">
+                            <div class="summary-card">
+                                <h4><i class="fas fa-clipboard-check"></i> Параметры проекта</h4>
+                                <div class="summary-item">
+                                    <span>Тип проекта:</span>
+                                    <strong id="resultType">—</strong>
+                                </div>
+                                <div class="summary-item">
+                                    <span>Платформы:</span>
+                                    <strong id="resultPlatforms">—</strong>
+                                </div>
+                                <div class="summary-item">
+                                    <span>Интеграции:</span>
+                                    <strong id="resultIntegrations">—</strong>
+                                </div>
+                                <div class="summary-item">
+                                    <span>Сложность:</span>
+                                    <strong id="resultComplexity">—</strong>
+                                </div>
+                                <div class="summary-item">
+                                    <span>Сроки:</span>
+                                    <strong id="resultDeadline">—</strong>
+                                </div>
+                            </div>
+                            
+                            <div class="summary-card">
+                                <h4><i class="fas fa-clock"></i> Сроки разработки</h4>
+                                <div class="timeline">
+                                    <div class="timeline-item">
+                                        <div class="timeline-dot"></div>
+                                        <div class="timeline-content">
+                                            <strong>Проектирование:</strong>
+                                            <span id="timelinePlanning">3-5 дней</span>
+                                        </div>
+                                    </div>
+                                    <div class="timeline-item">
+                                        <div class="timeline-dot"></div>
+                                        <div class="timeline-content">
+                                            <strong>Разработка:</strong>
+                                            <span id="timelineDevelopment">7-14 дней</span>
+                                        </div>
+                                    </div>
+                                    <div class="timeline-item">
+                                        <div class="timeline-dot"></div>
+                                        <div class="timeline-content">
+                                            <strong>Тестирование:</strong>
+                                            <span id="timelineTesting">2-3 дня</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="result-price">
+                            <div class="price-main">
+                                <div class="price-label">Ориентировочная стоимость:</div>
+                                <div class="price-amount" id="priceAmount">от 45 000 ₽</div>
+                                <div class="price-range" id="priceRange">45 000 – 80 000 ₽</div>
+                            </div>
+                            <div class="price-details">
+                                <p><i class="fas fa-info-circle"></i> Точная стоимость будет определена после консультации с менеджером</p>
+                                <p><i class="fas fa-check-circle"></i> В стоимость включены: разработка, тестирование, 3 месяца поддержки</p>
+                            </div>
+                        </div>
+                        
+                        <div class="result-actions">
+                            <button class="btn-primary" id="contactAfterCalc">
+                                <i class="fas fa-paper-plane"></i> Обсудить проект
+                            </button>
+                            <button class="btn-secondary" id="resetCalculator">
+                                <i class="fas fa-redo"></i> Новый расчет
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -93,8 +198,8 @@ cat > frontend/index.html << 'EOF'
     <section id="services" class="services-section">
         <div class="container">
             <div class="section-header">
-                <h2 class="animate-on-scroll"><i class="fas fa-concierge-bell"></i> Наши услуги</h2>
-                <p class="animate-on-scroll" data-delay="0.2s">Полный цикл разработки автоматизированных решений для вашего бизнеса</p>
+                <h2><i class="fas fa-concierge-bell"></i> Наши услуги</h2>
+                <p>Полный цикл разработки автоматизированных решений для вашего бизнеса</p>
             </div>
             
             <div class="services-grid">
@@ -116,7 +221,7 @@ cat > frontend/index.html << 'EOF'
                     </div>
                 </div>
                 
-                <div class="service-card animate-on-scroll" data-delay="0.1s">
+                <div class="service-card animate-on-scroll">
                     <div class="service-icon" style="background: linear-gradient(135deg, #7209b7, #560bad);">
                         <i class="fas fa-brain"></i>
                     </div>
@@ -134,7 +239,7 @@ cat > frontend/index.html << 'EOF'
                     </div>
                 </div>
                 
-                <div class="service-card animate-on-scroll" data-delay="0.2s">
+                <div class="service-card animate-on-scroll">
                     <div class="service-icon" style="background: linear-gradient(135deg, #4cc9f0, #4895ef);">
                         <i class="fas fa-mobile-alt"></i>
                     </div>
@@ -152,26 +257,8 @@ cat > frontend/index.html << 'EOF'
                     </div>
                 </div>
                 
-                <div class="service-card animate-on-scroll" data-delay="0.3s">
+                <div class="service-card animate-on-scroll">
                     <div class="service-icon" style="background: linear-gradient(135deg, #f72585, #b5179e);">
-                        <i class="fas fa-fire"></i>
-                    </div>
-                    <h3>MAX приложение</h3>
-                    <p>Мощные приложения с полной автоматизацией. Боты, аналитика, интеграции в одном решении.</p>
-                    <ul class="service-features">
-                        <li><i class="fas fa-check"></i> Полная автоматизация</li>
-                        <li><i class="fas fa-check"></i> Интеграция ботов</li>
-                        <li><i class="fas fa-check"></i> Продвинутая аналитика</li>
-                        <li><i class="fas fa-check"></i> Кастомизация под бизнес</li>
-                    </ul>
-                    <div class="service-price">
-                        <span class="price-from">от 90 000 ₽</span>
-                        <span class="price-time">21-30 дней</span>
-                    </div>
-                </div>
-                
-                <div class="service-card animate-on-scroll" data-delay="0.4s">
-                    <div class="service-icon" style="background: linear-gradient(135deg, #38b000, #2d9100);">
                         <i class="fas fa-code"></i>
                     </div>
                     <h3>Разработка сайтов</h3>
@@ -189,7 +276,7 @@ cat > frontend/index.html << 'EOF'
                 </div>
             </div>
             
-            <div class="services-note animate-on-scroll" data-delay="0.5s">
+            <div class="services-note">
                 <i class="fas fa-lightbulb"></i>
                 <p>Нужен индивидуальный проект? Мы разработаем решение под ваши уникальные задачи!</p>
             </div>
@@ -200,8 +287,8 @@ cat > frontend/index.html << 'EOF'
     <section id="advantages" class="advantages-section">
         <div class="container">
             <div class="section-header">
-                <h2 class="animate-on-scroll"><i class="fas fa-trophy"></i> Почему выбирают MakeBot</h2>
-                <p class="animate-on-scroll" data-delay="0.2s">Мы создаем решения, которые приносят реальную пользу бизнесу</p>
+                <h2><i class="fas fa-trophy"></i> Почему выбирают MakeBot</h2>
+                <p>Мы создаем решения, которые приносят реальную пользу бизнесу</p>
             </div>
             
             <div class="advantages-grid">
@@ -213,7 +300,7 @@ cat > frontend/index.html << 'EOF'
                     <p>Стандартные решения запускаем за 7 дней. Индивидуальная разработка — 2-4 недели.</p>
                 </div>
                 
-                <div class="advantage-card animate-on-scroll" data-delay="0.1s">
+                <div class="advantage-card animate-on-scroll">
                     <div class="advantage-icon">
                         <i class="fas fa-headset"></i>
                     </div>
@@ -221,7 +308,7 @@ cat > frontend/index.html << 'EOF'
                     <p>Гарантийная поддержка 3 месяца бесплатно. Помогаем с настройкой и обучением.</p>
                 </div>
                 
-                <div class="advantage-card animate-on-scroll" data-delay="0.2s">
+                <div class="advantage-card animate-on-scroll">
                     <div class="advantage-icon">
                         <i class="fas fa-chart-line"></i>
                     </div>
@@ -229,7 +316,7 @@ cat > frontend/index.html << 'EOF'
                     <p>Фиксированная стоимость в договоре. Без скрытых платежей и неожиданных доплат.</p>
                 </div>
                 
-                <div class="advantage-card animate-on-scroll" data-delay="0.3s">
+                <div class="advantage-card animate-on-scroll">
                     <div class="advantage-icon">
                         <i class="fas fa-puzzle-piece"></i>
                     </div>
@@ -237,7 +324,7 @@ cat > frontend/index.html << 'EOF'
                     <p>Подключаем к CRM, API, 1C, AmoCRM, Битрикс24 и другим бизнес-инструментам.</p>
                 </div>
                 
-                <div class="advantage-card animate-on-scroll" data-delay="0.4s">
+                <div class="advantage-card animate-on-scroll">
                     <div class="advantage-icon">
                         <i class="fas fa-shield-alt"></i>
                     </div>
@@ -245,7 +332,7 @@ cat > frontend/index.html << 'EOF'
                     <p>Тестируем на всех этапах разработки. Предоставляем гарантию на код.</p>
                 </div>
                 
-                <div class="advantage-card animate-on-scroll" data-delay="0.5s">
+                <div class="advantage-card animate-on-scroll">
                     <div class="advantage-icon">
                         <i class="fas fa-file-contract"></i>
                     </div>
@@ -260,8 +347,8 @@ cat > frontend/index.html << 'EOF'
     <section id="process" class="process-section">
         <div class="container">
             <div class="section-header">
-                <h2 class="animate-on-scroll"><i class="fas fa-play-circle"></i> Как мы работаем</h2>
-                <p class="animate-on-scroll" data-delay="0.2s">Четкий процесс от заявки до запуска вашего проекта</p>
+                <h2><i class="fas fa-play-circle"></i> Как мы работаем</h2>
+                <p>Четкий процесс от заявки до запуска вашего проекта</p>
             </div>
             
             <div class="process-steps">
@@ -276,7 +363,7 @@ cat > frontend/index.html << 'EOF'
                     </div>
                 </div>
                 
-                <div class="process-step animate-on-scroll" data-delay="0.1s">
+                <div class="process-step animate-on-scroll">
                     <div class="step-number">02</div>
                     <div class="step-icon">
                         <i class="fas fa-pen-ruler"></i>
@@ -287,7 +374,7 @@ cat > frontend/index.html << 'EOF'
                     </div>
                 </div>
                 
-                <div class="process-step animate-on-scroll" data-delay="0.2s">
+                <div class="process-step animate-on-scroll">
                     <div class="step-number">03</div>
                     <div class="step-icon">
                         <i class="fas fa-code"></i>
@@ -298,7 +385,7 @@ cat > frontend/index.html << 'EOF'
                     </div>
                 </div>
                 
-                <div class="process-step animate-on-scroll" data-delay="0.3s">
+                <div class="process-step animate-on-scroll">
                     <div class="step-number">04</div>
                     <div class="step-icon">
                         <i class="fas fa-vial"></i>
@@ -309,7 +396,7 @@ cat > frontend/index.html << 'EOF'
                     </div>
                 </div>
                 
-                <div class="process-step animate-on-scroll" data-delay="0.4s">
+                <div class="process-step animate-on-scroll">
                     <div class="step-number">05</div>
                     <div class="step-icon">
                         <i class="fas fa-rocket"></i>
@@ -320,7 +407,7 @@ cat > frontend/index.html << 'EOF'
                     </div>
                 </div>
                 
-                <div class="process-step animate-on-scroll" data-delay="0.5s">
+                <div class="process-step animate-on-scroll">
                     <div class="step-number">06</div>
                     <div class="step-icon">
                         <i class="fas fa-hands-helping"></i>
@@ -338,35 +425,29 @@ cat > frontend/index.html << 'EOF'
     <section id="contact" class="contact-section">
         <div class="container">
             <div class="section-header">
-                <h2 class="animate-on-scroll"><i class="fas fa-envelope"></i> Свяжитесь с нами</h2>
-                <p class="animate-on-scroll" data-delay="0.2s">Расскажите о вашем проекте, и мы подготовим индивидуальное предложение</p>
+                <h2><i class="fas fa-envelope"></i> Свяжитесь с нами</h2>
+                <p>Расскажите о вашем проекте, и мы подготовим индивидуальное предложение</p>
             </div>
             
             <div class="contact-content">
-                <div class="contact-form animate-on-scroll">
+                <div class="contact-form">
                     <form id="contactForm">
-                        <div class="form-group">
-                            <label for="name"><i class="fas fa-user"></i> Ваше имя *</label>
-                            <input type="text" id="name" placeholder="Иван Иванов" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="phone"><i class="fas fa-phone"></i> Телефон *</label>
-                            <div class="phone-input-wrapper">
-                                <span class="phone-prefix">+7</span>
-                                <input type="tel" id="phone" placeholder="(XXX) XXX-XX-XX" required pattern="^\(\d{3}\) \d{3}-\d{2}-\d{2}$" title="Формат: (XXX) XXX-XX-XX">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="name"><i class="fas fa-user"></i> Ваше имя *</label>
+                                <input type="text" id="name" placeholder="Иван Иванов" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="phone"><i class="fas fa-phone"></i> Телефон *</label>
+                                <input type="tel" id="phone" placeholder="+7 (XXX) XXX-XX-XX" required pattern="^\+7\s\(\d{3}\)\s\d{3}-\d{2}-\d{2}$">
                             </div>
                         </div>
                         
-                        <div class="form-group">
-                            <label for="message"><i class="fas fa-comment-alt"></i> Комментарий</label>
-                            <textarea id="message" rows="3" placeholder="Кратко опишите вашу задачу..."></textarea>
-                        </div>
-                        
-                        <div class="form-agreement">
-                            <input type="checkbox" id="privacyAgreement" required>
-                            <label for="privacyAgreement">
-                                Я соглашаюсь с <a href="#" class="privacy-link">обработкой персональных данных</a> *
+                        <div class="form-group checkbox-group">
+                            <input type="checkbox" id="privacyPolicy" name="privacyPolicy" required>
+                            <label for="privacyPolicy">
+                                Я согласен на <a href="#privacyModal" class="privacy-link">обработку персональных данных</a> *
                             </label>
                         </div>
                         
@@ -379,7 +460,7 @@ cat > frontend/index.html << 'EOF'
                 </div>
                 
                 <div class="contact-info">
-                    <div class="info-card animate-on-scroll" data-delay="0.2s">
+                    <div class="info-card">
                         <h3><i class="fas fa-info-circle"></i> Контактная информация</h3>
                         
                         <div class="info-item">
@@ -389,6 +470,7 @@ cat > frontend/index.html << 'EOF'
                             <div class="info-content">
                                 <strong>Email</strong>
                                 <p>info@makebot.ru</p>
+                                <p>sales@makebot.ru</p>
                             </div>
                         </div>
                         
@@ -399,6 +481,7 @@ cat > frontend/index.html << 'EOF'
                             <div class="info-content">
                                 <strong>Телефон</strong>
                                 <p>+7 (XXX) XXX-XX-XX</p>
+                                <p>Telegram: @makebot_support</p>
                             </div>
                         </div>
                         
@@ -409,11 +492,23 @@ cat > frontend/index.html << 'EOF'
                             <div class="info-content">
                                 <strong>Время работы</strong>
                                 <p>Пн-Пт: 9:00-18:00</p>
+                                <p>Сб-Вс: по договоренности</p>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <div class="info-content">
+                                <strong>Адрес</strong>
+                                <p>Москва, ул. Примерная, д. 1</p>
+                                <p>Работаем по всей России</p>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="social-card animate-on-scroll" data-delay="0.3s">
+                    <div class="social-card">
                         <h3><i class="fas fa-share-alt"></i> Мы в соцсетях</h3>
                         <div class="social-links">
                             <a href="#" class="social-link telegram">
@@ -428,7 +523,71 @@ cat > frontend/index.html << 'EOF'
                                 <i class="fab fa-vk"></i>
                                 <span>ВКонтакте</span>
                             </a>
+                            <a href="#" class="social-link max">
+                                <i class="fas fa-comment"></i>
+                                <span>MAX</span>
+                            </a>
                         </div>
+                    </div>
+                    
+                    <div class="support-card">
+                        <h3><i class="fas fa-question-circle"></i> Нужна помощь?</h3>
+                        <p>Не знаете, какое решение подойдет именно вам?</p>
+                        <a href="#calculator" class="btn-secondary">
+                            <i class="fas fa-calculator"></i> Подобрать решение
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="faq-section">
+        <div class="container">
+            <div class="section-header">
+                <h2><i class="fas fa-question-circle"></i> Часто задаваемые вопросы</h2>
+                <p>Ответы на самые популярные вопросы о наших услугах</p>
+            </div>
+            
+            <div class="faq-list">
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>Сколько времени занимает разработка?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Стандартный чат-бот — 7-10 дней. ИИ-бот с нейросетями — 14-21 день. Мини-приложения — 10-14 дней. Сайты — 7-14 дней. Сроки зависят от сложности проекта.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>Какие гарантии вы предоставляете?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Мы предоставляем 3 месяца бесплатной технической поддержки после запуска. Гарантируем исправление всех выявленных ошибок в течение гарантийного срока.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>Можно ли изменить бота после запуска?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Да, мы предоставляем доступ к админ-панели, где вы можете самостоятельно редактировать тексты, добавлять новые сценарии или заказать доработки у нас.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>Какие платежи вы принимаете?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Банковский перевод, онлайн-оплата картой, СБП, криптовалюты. Работаем с ИП и ООО, предоставляем все закрывающие документы.</p>
                     </div>
                 </div>
             </div>
@@ -457,8 +616,8 @@ cat > frontend/index.html << 'EOF'
                             <li><a href="#services">Чат-боты</a></li>
                             <li><a href="#services">ИИ-боты</a></li>
                             <li><a href="#services">Мини-приложения</a></li>
-                            <li><a href="#services">MAX приложения</a></li>
                             <li><a href="#services">Разработка сайтов</a></li>
+                            <li><a href="#services">Техническая поддержка</a></li>
                         </ul>
                     </div>
                     
@@ -468,13 +627,18 @@ cat > frontend/index.html << 'EOF'
                             <li><a href="#process">Как работаем</a></li>
                             <li><a href="#advantages">Преимущества</a></li>
                             <li><a href="#contact">Контакты</a></li>
+                            <li><a href="#">О нас</a></li>
+                            <li><a href="#">Портфолио</a></li>
                         </ul>
                     </div>
                     
                     <div class="footer-column">
                         <h4>Документы</h4>
                         <ul>
-                            <li><a href="#" class="privacy-link-footer">Политика обработки персональных данных</a></li>
+                            <li><a href="#privacyModal" class="privacy-link">Политика конфиденциальности</a></li>
+                            <li><a href="#">Пользовательское соглашение</a></li>
+                            <li><a href="#">Оферта</a></li>
+                            <li><a href="#">Реквизиты</a></li>
                         </ul>
                     </div>
                 </div>
@@ -483,6 +647,12 @@ cat > frontend/index.html << 'EOF'
             <div class="footer-bottom">
                 <div class="copyright">
                     © 2026 MakeBot. Все права защищены.
+                </div>
+                <div class="footer-payments">
+                    <i class="fab fa-cc-visa"></i>
+                    <i class="fab fa-cc-mastercard"></i>
+                    <i class="fab fa-cc-paypal"></i>
+                    <i class="fas fa-university"></i>
                 </div>
                 <div class="footer-stats">
                     <span><i class="fas fa-server"></i> Сервер: 93.77.179.64</span>
@@ -505,56 +675,47 @@ cat > frontend/index.html << 'EOF'
     </div>
 
     <!-- Модальное окно политики -->
-    <div class="modal" id="privacyModal">
+    <div class="modal privacy-modal" id="privacyModal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3><i class="fas fa-shield-alt"></i> Политика обработки персональных данных</h3>
                 <button class="modal-close" id="closePrivacyModal">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="privacy-content">
-                    <h4>1. Общие положения</h4>
-                    <p>Настоящая политика обработки персональных данных составлена в соответствии с требованиями Федерального закона от 27.07.2006 №152-ФЗ «О персональных данных» и определяет порядок обработки персональных данных и меры по обеспечению безопасности персональных данных, предпринимаемые MakeBot (далее – Оператор).</p>
-                    
-                    <h4>2. Основные понятия, используемые в Политике</h4>
-                    <p>Автоматизированная обработка персональных данных – обработка персональных данных с помощью средств вычислительной техники.</p>
-                    <p>Блокирование персональных данных – временное прекращение обработки персональных данных (за исключением случаев, если обработка необходима для уточнения персональных данных).</p>
-                    
-                    <h4>3. Оператор может обрабатывать следующие персональные данные Пользователя</h4>
-                    <ul>
-                        <li>Фамилия, имя, отчество</li>
-                        <li>Номер телефона</li>
-                        <li>Адрес электронной почты</li>
-                        <li>Также на сайте происходит сбор и обработка обезличенных данных о посетителях (в т.ч. файлов «cookie») с помощью сервисов интернет-статистики</li>
-                    </ul>
-                    
-                    <h4>4. Цели обработки персональных данных</h4>
-                    <ul>
-                        <li>Предоставление доступа Пользователю к сервисам, информации и/или материалам, содержащимся на веб-сайте</li>
-                        <li>Заключение, исполнение и прекращение гражданско-правовых договоров</li>
-                        <li>Предоставление клиентской поддержки</li>
-                        <li>Обратная связь с Пользователем, в том числе направление уведомлений, запросов, касающихся использования Сайта, оказания услуг, обработка запросов и заявок от Пользователя</li>
-                    </ul>
-                    
-                    <h4>5. Правовые основания обработки персональных данных</h4>
-                    <p>Оператор обрабатывает персональные данные Пользователя только в случае их заполнения и/или отправки Пользователем самостоятельно через специальные формы, расположенные на сайте. Заполняя соответствующие формы и/или отправляя свои персональные данные Оператору, Пользователь выражает свое согласие с данной Политикой.</p>
-                    
-                    <h4>6. Порядок сбора, хранения, передачи и других видов обработки персональных данных</h4>
-                    <p>Безопасность персональных данных, которые обрабатываются Оператором, обеспечивается путем реализации правовых, организационных и технических мер, необходимых для выполнения в полном объеме требований действующего законодательства в области защиты персональных данных.</p>
-                    
-                    <h4>7. Заключительные положения</h4>
-                    <p>Пользователь может получить любые разъяснения по интересующим вопросам, касающимся обработки его персональных данных, обратившись к Оператору с помощью электронной почты info@makebot.ru.</p>
-                    <p>В данном документе будут отражены любые изменения политики обработки персональных данных Оператором. Политика действует бессрочно до замены ее новой версией.</p>
-                </div>
+                <h4>1. Общие положения</h4>
+                <p>Настоящая политика обработки персональных данных составлена в соответствии с требованиями Федерального закона от 27.07.2006. №152-ФЗ «О персональных данных» и определяет порядок обработки персональных данных и меры по обеспечению безопасности персональных данных, предпринимаемые MakeBot (далее – Оператор).</p>
+                
+                <h4>2. Основные понятия, используемые в Политике</h4>
+                <p>Персональные данные – любая информация, относящаяся прямо или косвенно к определенному или определяемому физическому лицу (субъекту персональных данных).</p>
+                
+                <h4>3. Оператор может обрабатывать следующие персональные данные Пользователя</h4>
+                <ul>
+                    <li>Фамилия, имя, отчество;</li>
+                    <li>Номер телефона;</li>
+                    <li>Адрес электронной почты;</li>
+                    <li>Также на сайте происходит сбор и обработка обезличенных данных о посетителях (в т.ч. файлов «cookie») с помощью сервисов интернет-статистики.</li>
+                </ul>
+                
+                <h4>4. Цели обработки персональных данных</h4>
+                <p>Цель обработки персональных данных Пользователя — заключение, исполнение и прекращение гражданско-правовых договоров; предоставление доступа Пользователю к сервисам, информации и/или материалам, содержащимся на веб-сайте; уточнение деталей заказа.</p>
+                
+                <h4>5. Правовые основания обработки персональных данных</h4>
+                <p>Оператор обрабатывает персональные данные Пользователя только в случае их заполнения и/или отправки Пользователем самостоятельно через специальные формы, расположенные на сайте. Заполняя соответствующие формы и/или отправляя свои персональные данные Оператору, Пользователь выражает свое согласие с данной Политикой.</p>
+                
+                <h4>6. Порядок сбора, хранения, передачи и других видов обработки персональных данных</h4>
+                <p>Безопасность персональных данных, которые обрабатываются Оператором, обеспечивается путем реализации правовых, организационных и технических мер, необходимых для выполнения в полном объеме требований действующего законодательства в области защиты персональных данных.</p>
+                
+                <h4>7. Заключительные положения</h4>
+                <p>Пользователь может получить любые разъяснения по интересующим вопросам, касающимся обработки его персональных данных, обратившись к Оператору с помощью электронной почты info@makebot.ru.</p>
             </div>
             <div class="modal-footer">
-                <button class="btn-primary" id="acceptPrivacy">Принимаю</button>
+                <button class="btn-primary" id="acceptPrivacyPolicy">Принимаю</button>
             </div>
         </div>
     </div>
 
     <!-- Скрипты -->
+    <script src="js/calculator.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>
-EOF
