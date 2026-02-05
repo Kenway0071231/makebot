@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # ============================================
-# MakeBot Deploy Script
-# Версия: 2.3.0
+# MakeBot Deploy Script for Yandex Cloud
+# Версия: 2.4.0
 # ============================================
 
 set -e
@@ -33,114 +33,217 @@ print_error() {
 
 # Проверка .env файла
 check_env_file() {
+    print_info "Проверка файла .env..."
+    
+    # Если файла нет, создаем из примера
     if [ ! -f .env ]; then
         print_warning "Файл .env не найден!"
-        print_info "Создаю .env из примера..."
         if [ -f .env.example ]; then
             cp .env.example .env
-            print_success "Файл .env создан из примера"
-            print_warning "⚠️  Обязательно проверьте настройки Telegram в файле .env!"
-            echo ""
-            echo "Telegram настройки (проверьте в .env):"
-            echo "  TELEGRAM_BOT_TOKEN=8216117039:AAGXvE3XwIfRXO7BBl-rFG2uEcfDEL0dtRM"
-            echo "  TELEGRAM_CHAT_ID=1079922982"
-            echo ""
-            read -p "Продолжить с текущими настройками? (y/N): " -n 1 -r
-            echo
-            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-                print_error "Прервано пользователем"
-                exit 1
-            fi
+            print_success "Создан .env из примера"
         else
             print_error "Файл .env.example также отсутствует!"
             exit 1
         fi
-    else
-        print_success "Файл .env найден"
     fi
+    
+    # Проверяем важные переменные
+    print_info "Проверка важных переменных..."
+    
+    local telegram_token=$(grep -E "^TELEGRAM_BOT_TOKEN=" .env | cut -d'=' -f2)
+    local telegram_chat=$(grep -E "^TELEGRAM_CHAT_ID=" .env | cut -d'=' -f2)
+    
+    if [ -z "$telegram_token" ] || [[ "$telegram_token" == *"ваш_токен"* ]]; then
+        print_error "TELEGRAM_BOT_TOKEN не настроен или содержит значение по умолчанию!"
+        echo ""
+        echo "=========== ВАЖНО! ==========="
+        echo "Для работы отправки заявок в Telegram:"
+        echo "1. Откройте файл .env: nano .env"
+        echo "2. Найдите строку TELEGRAM_BOT_TOKEN"
+        echo "3. Замените на ваш реальный токен:"
+        echo "   TELEGRAM_BOT_TOKEN=8216117039:AAGXvE3XwIfRXO7BBl-rFG2uEcfDEL0dtRM"
+        echo "4. Сохраните файл: Ctrl+X, затем Y, затем Enter"
+        echo "=============================="
+        echo ""
+        read -p "Продолжить с текущими настройками? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            exit 1
+        fi
+    fi
+    
+    if [ -z "$telegram_chat" ] || [[ "$telegram_chat" == *"ваш_чат_id"* ]]; then
+        print_error "TELEGRAM_CHAT_ID не настроен или содержит значение по умолчанию!"
+        echo ""
+        echo "=========== ВАЖНО! ==========="
+        echo "Для получения заявок в Telegram:"
+        echo "1. Откройте файл .env: nano .env"
+        echo "2. Найдите строку TELEGRAM_CHAT_ID"
+        echo "3. Замените на ваш Chat ID:"
+        echo "   TELEGRAM_CHAT_ID=1079922982"
+        echo "4. Сохраните файл"
+        echo "=============================="
+        echo ""
+    fi
+    
+    print_success "Проверка .env завершена"
+}
+
+# Создание структуры папок
+create_structure() {
+    print_info "Создание структуры папок..."
+    
+    # Основные папки
+    mkdir -p backend/data
+    mkdir -p frontend/css
+    mkdir -p frontend/js
+    mkdir -p logs
+    
+    # Создаем .gitkeep для data
+    touch backend/data/.gitkeep
+    
+    print_success "Структура папок создана"
+}
+
+# Копирование файлов
+copy_files() {
+    print_info "Копирование файлов..."
+    
+    # Проверяем наличие файлов
+    if [ ! -f "backend/package.json" ]; then
+        print_error "Файл backend/package.json не найден!"
+        exit 1
+    fi
+    
+    if [ ! -f "frontend/index.html" ]; then
+        print_warning "Файл frontend/index.html не найден, создаю базовый..."
+        # Можно создать базовый HTML
+    fi
+    
+    print_success "Файлы проверены"
 }
 
 # Основная функция
 main() {
     echo
     echo "============================================"
-    echo "       MakeBot Deployment Script v2.3       "
+    echo "   MakeBot Deployment Script v2.4"
+    echo "   for Yandex Cloud"
     echo "============================================"
     echo
-    
-    # Проверка .env файла
-    check_env_file
     
     # Проверка Docker
     if ! command -v docker &> /dev/null; then
         print_error "Docker не установлен!"
-        echo "Установите Docker: https://docs.docker.com/get-docker/"
+        echo "Установите Docker:"
+        echo "  curl -fsSL https://get.docker.com -o get-docker.sh"
+        echo "  sudo sh get-docker.sh"
         exit 1
     fi
 
-    # Проверка Docker Compose
     if ! command -v docker-compose &> /dev/null; then
         print_error "Docker Compose не установлен!"
-        echo "Установите Docker Compose: https://docs.docker.com/compose/install/"
+        echo "Установите Docker Compose:"
+        echo "  sudo apt-get update"
+        echo "  sudo apt-get install docker-compose"
         exit 1
     fi
-
-    # Создаем папку для данных если её нет
-    mkdir -p backend/data
     
-    # Инициализируем файлы данных
+    # Проверка .env
+    check_env_file
+    
+    # Создание структуры
+    create_structure
+    
+    # Копирование файлов
+    copy_files
+    
+    # Создаем файлы данных если их нет
+    print_info "Инициализация файлов данных..."
+    
     if [ ! -f "backend/data/calculator_requests.json" ]; then
         echo '[]' > backend/data/calculator_requests.json
-        print_success "Создан файл calculator_requests.json"
+        print_success "Создан calculator_requests.json"
     fi
+    
     if [ ! -f "backend/data/contact_requests.json" ]; then
         echo '[]' > backend/data/contact_requests.json
-        print_success "Создан файл contact_requests.json"
+        print_success "Создан contact_requests.json"
     fi
-
+    
+    # Проверяем права на файлы
+    chmod 755 deploy.sh
+    chmod 644 backend/data/*.json 2>/dev/null || true
+    
     # Запуск проекта
     print_info "Запуск Docker контейнеров..."
+    
+    # Останавливаем старые контейнеры
     docker-compose down 2>/dev/null || true
+    
+    # Собираем образ
+    print_info "Сборка Docker образа..."
     docker-compose build --no-cache
+    
+    # Запускаем
+    print_info "Запуск контейнеров..."
     docker-compose up -d
-
+    
     # Ожидание запуска
-    print_info "Ожидание запуска приложения (30 секунд)..."
-    sleep 30
-
+    print_info "Ожидание запуска приложения (15 секунд)..."
+    sleep 15
+    
     # Проверка
-    if curl -s -f http://localhost:3000/api/health > /dev/null; then
-        print_success "Сайт успешно запущен!"
+    print_info "Проверка работоспособности..."
+    
+    if curl -s -f http://localhost:3000/api/health > /dev/null 2>&1; then
+        print_success "✅ Сайт успешно запущен!"
+        
+        echo
+        echo "============================================"
+        echo "           MakeBot Развернут!"
+        echo "============================================"
         echo
         echo "🌐 Откройте в браузере:"
+        echo "   http://ваш-ip-адрес:3000"
+        echo "   или"
         echo "   http://localhost:3000"
         echo
-        echo "🤖 Telegram для заявок:"
+        echo "🤖 Telegram настройки:"
         echo "   Бот: @makebot_support_bot"
-        echo "   Чат ID: 1079922982"
+        echo "   Chat ID: 1079922982"
         echo
         echo "🛠️  Команды управления:"
-        echo "   Логи:        docker-compose logs -f"
-        echo "   Остановка:   docker-compose down"
-        echo "   Перезапуск:  docker-compose restart"
-        echo "   Статус:      docker-compose ps"
+        echo "   Просмотр логов:   docker-compose logs -f"
+        echo "   Остановить:       docker-compose down"
+        echo "   Перезапустить:    docker-compose restart"
+        echo "   Статус:           docker-compose ps"
         echo
-        echo "📊 Проверка здоровья сервера:"
+        echo "🔍 Проверка API:"
         echo "   curl http://localhost:3000/api/health"
+        echo "   curl http://localhost:3000/api/info"
         echo
-        echo "🤖 Тест отправки в Telegram:"
+        echo "📊 Тест Telegram:"
         echo "   curl http://localhost:3000/api/test/telegram"
         echo
-        echo "📁 Файлы данных заявок:"
+        echo "📁 Файлы данных:"
         echo "   backend/data/calculator_requests.json"
         echo "   backend/data/contact_requests.json"
         echo
+        echo "============================================"
+        
     else
         print_error "Ошибка запуска!"
-        echo "Проверьте логи: docker-compose logs makebot"
+        echo
+        echo "Проверьте логи:"
+        echo "  docker-compose logs makebot"
+        echo
+        echo "Или попробуйте запустить вручную:"
+        echo "  docker-compose up"
+        echo
         exit 1
     fi
 }
 
-# Запуск основной функции
+# Запуск
 main "$@"
