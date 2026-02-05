@@ -1,295 +1,258 @@
 /**
- * MakeBot Калькулятор стоимости
- * Упрощенная рабочая версия
+ * MakeBot Калькулятор (упрощенный)
  */
 
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('MakeBot Calculator loaded');
-    
-    // Конфигурация
-    const config = {
-        currentStep: 1,
-        answers: {},
-        calculationData: {}
-    };
-    
-    // Элементы DOM
-    const elements = {
-        questionContainer: document.getElementById('questionContainer'),
-        resultContainer: document.getElementById('resultContainer'),
-        progressFill: document.getElementById('progressFill'),
-        currentQuestion: document.getElementById('currentQuestion'),
-        resetButton: document.getElementById('resetCalculator'),
-        calculatorContactForm: document.getElementById('calculatorContactForm'),
-        submitCalculatorForm: document.getElementById('submitCalculatorForm')
-    };
-    
-    // Вопросы
-    const questions = [
-        {
-            id: 1,
-            question: "Какой проект вам нужен?",
-            options: [
-                { id: "simple-bot", text: "Чат-бот средней сложности", icon: "fas fa-comment-dots", price: "от 7 500 ₽" },
-                { id: "ai-bot", text: "ИИ-бот с нейросетями", icon: "fas fa-brain", price: "от 12 500 ₽" },
-                { id: "website", text: "Сайт (базовый/средний)", icon: "fas fa-code", price: "от 15 000 ₽" },
-                { id: "mini-app", text: "Мини-приложение", icon: "fas fa-mobile-alt", price: "от 25 000 ₽" }
-            ]
-        },
-        {
-            id: 2,
-            question: "Какие интеграции нужны?",
-            options: [
-                { id: "none", text: "Без интеграций", icon: "fas fa-times" },
-                { id: "crm", text: "CRM система", icon: "fas fa-database" },
-                { id: "payment", text: "Онлайн-оплата", icon: "fas fa-credit-card" },
-                { id: "api", text: "Внешние API", icon: "fas fa-plug" }
-            ]
-        },
-        {
-            id: 3,
-            question: "Оцените сложность проекта",
-            options: [
-                { id: "simple", text: "Простая", icon: "fas fa-stream" },
-                { id: "medium", text: "Средняя", icon: "fas fa-code-branch" },
-                { id: "complex", text: "Сложная", icon: "fas fa-cogs" }
-            ]
-        },
-        {
-            id: 4,
-            question: "Сроки разработки",
-            options: [
-                { id: "normal", text: "Стандартные сроки", icon: "fas fa-calendar-alt" },
-                { id: "fast", text: "Ускоренные сроки", icon: "fas fa-bolt" },
-                { id: "very-fast", text: "Максимально срочно", icon: "fas fa-rocket" }
-            ]
-        }
-    ];
-    
-    // Инициализация
-    function initCalculator() {
-        showQuestion(1);
-        setupEventListeners();
+class Calculator {
+    constructor() {
+        this.currentStep = 1;
+        this.answers = {};
+        this.totalSteps = 4;
+        
+        this.elements = {
+            questionContainer: document.getElementById('questionContainer'),
+            resultContainer: document.getElementById('resultContainer'),
+            progressFill: document.getElementById('progressFill'),
+            currentQuestion: document.getElementById('currentQuestion'),
+            resetButton: document.getElementById('resetCalculator'),
+            calculatorForm: document.getElementById('calculatorContactForm')
+        };
+        
+        this.questions = [
+            {
+                id: 1,
+                question: "Какой проект вам нужен?",
+                key: "projectType",
+                options: [
+                    { id: "simple-bot", text: "Чат-бот", icon: "fas fa-comment-dots", price: 7500 },
+                    { id: "ai-bot", text: "ИИ-бот", icon: "fas fa-brain", price: 12500 },
+                    { id: "website", text: "Сайт", icon: "fas fa-code", price: 15000 },
+                    { id: "mini-app", text: "Мини-приложение", icon: "fas fa-mobile-alt", price: 25000 }
+                ]
+            },
+            {
+                id: 2,
+                question: "Какие интеграции нужны?",
+                key: "integrations",
+                options: [
+                    { id: "none", text: "Без интеграций", icon: "fas fa-times", multiplier: 1.0 },
+                    { id: "crm", text: "CRM система", icon: "fas fa-database", multiplier: 1.3 },
+                    { id: "payment", text: "Оплата онлайн", icon: "fas fa-credit-card", multiplier: 1.25 },
+                    { id: "api", text: "Внешние API", icon: "fas fa-plug", multiplier: 1.2 }
+                ]
+            },
+            {
+                id: 3,
+                question: "Сложность проекта",
+                key: "complexity",
+                options: [
+                    { id: "simple", text: "Простая", icon: "fas fa-stream", multiplier: 1.0 },
+                    { id: "medium", text: "Средняя", icon: "fas fa-code-branch", multiplier: 1.5 },
+                    { id: "complex", text: "Сложная", icon: "fas fa-cogs", multiplier: 2.0 }
+                ]
+            },
+            {
+                id: 4,
+                question: "Сроки разработки",
+                key: "deadline",
+                options: [
+                    { id: "normal", text: "Стандартно", icon: "fas fa-calendar-alt", multiplier: 1.0 },
+                    { id: "fast", text: "Быстро", icon: "fas fa-bolt", multiplier: 1.3 },
+                    { id: "urgent", text: "Срочно", icon: "fas fa-rocket", multiplier: 1.5 }
+                ]
+            }
+        ];
+        
+        this.init();
     }
     
-    // Показать вопрос
-    function showQuestion(step) {
-        config.currentStep = step;
-        
-        if (step > questions.length) {
-            calculateResult();
-            return;
-        }
-        
-        const question = questions[step - 1];
+    init() {
+        this.showQuestion(1);
+        this.setupEventListeners();
+    }
+    
+    showQuestion(step) {
+        this.currentStep = step;
+        const question = this.questions[step - 1];
         
         // Обновить прогресс
-        updateProgress(step);
+        const progress = ((step - 1) / (this.totalSteps - 1)) * 100;
+        this.elements.progressFill.style.width = `${progress}%`;
+        this.elements.currentQuestion.textContent = step;
         
         // Создать HTML
-        const questionHTML = `
+        const html = `
             <div class="question">
                 <h3>${question.question}</h3>
                 <div class="options-grid">
-                    ${question.options.map(option => `
-                        <div class="option" data-id="${option.id}">
-                            <i class="${option.icon}"></i>
+                    ${question.options.map(opt => `
+                        <div class="option" data-id="${opt.id}" data-multiplier="${opt.multiplier || 1}">
+                            <i class="${opt.icon}"></i>
                             <div class="option-content">
-                                <div class="option-title">${option.text}</div>
-                                ${option.price ? `<div class="option-price">${option.price}</div>` : ''}
+                                <div class="option-title">${opt.text}</div>
+                                ${opt.price ? `<div class="option-price">от ${this.formatPrice(opt.price)} ₽</div>` : ''}
                             </div>
                         </div>
                     `).join('')}
                 </div>
                 <div class="buttons">
-                    ${step > 1 ? `<button class="btn-secondary prev-btn"><i class="fas fa-arrow-left"></i> Назад</button>` : '<div></div>'}
+                    ${step > 1 ? '<button class="btn-secondary prev-btn"><i class="fas fa-arrow-left"></i> Назад</button>' : '<div></div>'}
                     <button class="btn-primary next-btn">
-                        ${step === questions.length ? 'Рассчитать стоимость <i class="fas fa-calculator"></i>' : 'Далее <i class="fas fa-arrow-right"></i>'}
+                        ${step === this.totalSteps ? 'Рассчитать <i class="fas fa-calculator"></i>' : 'Далее <i class="fas fa-arrow-right"></i>'}
                     </button>
                 </div>
             </div>
         `;
         
-        elements.questionContainer.innerHTML = questionHTML;
+        this.elements.questionContainer.innerHTML = html;
+        this.elements.resultContainer.style.display = 'none';
+        this.elements.questionContainer.style.display = 'block';
         
-        // Скрыть результат
-        elements.resultContainer.style.display = 'none';
-        elements.questionContainer.style.display = 'block';
-        
-        // Добавить обработчики
-        setupQuestionListeners(question, step);
+        // Настроить обработчики
+        this.setupQuestionListeners(question);
     }
     
-    // Обновить прогресс
-    function updateProgress(step) {
-        const progressPercent = ((step - 1) / (questions.length - 1)) * 100;
-        elements.progressFill.style.width = `${progressPercent}%`;
-        elements.currentQuestion.textContent = step;
-    }
-    
-    // Настройка обработчиков вопросов
-    function setupQuestionListeners(question, step) {
+    setupQuestionListeners(question) {
         const options = document.querySelectorAll('.option');
         const nextBtn = document.querySelector('.next-btn');
         const prevBtn = document.querySelector('.prev-btn');
         
-        // Обработчики для опций
-        options.forEach(option => {
-            option.addEventListener('click', function() {
-                // Снять выделение со всех
-                options.forEach(opt => opt.classList.remove('selected'));
-                // Выделить выбранный
-                this.classList.add('selected');
-                // Сохранить ответ
-                config.answers[`question${step}`] = {
-                    id: this.getAttribute('data-id'),
-                    text: this.querySelector('.option-title').textContent
+        options.forEach(opt => {
+            opt.addEventListener('click', () => {
+                options.forEach(o => o.classList.remove('selected'));
+                opt.classList.add('selected');
+                
+                this.answers[question.key] = {
+                    id: opt.dataset.id,
+                    text: opt.querySelector('.option-title').textContent,
+                    multiplier: parseFloat(opt.dataset.multiplier)
                 };
             });
         });
         
-        // Кнопка "Далее"
         if (nextBtn) {
-            nextBtn.addEventListener('click', function() {
-                if (!config.answers[`question${step}`]) {
-                    alert('Пожалуйста, выберите вариант');
+            nextBtn.addEventListener('click', () => {
+                if (!this.answers[question.key]) {
+                    alert('Выберите вариант ответа');
                     return;
                 }
                 
-                if (step < questions.length) {
-                    showQuestion(step + 1);
+                if (this.currentStep < this.totalSteps) {
+                    this.showQuestion(this.currentStep + 1);
                 } else {
-                    calculateResult();
+                    this.calculate();
                 }
             });
         }
         
-        // Кнопка "Назад"
         if (prevBtn) {
-            prevBtn.addEventListener('click', function() {
-                if (step > 1) {
-                    showQuestion(step - 1);
+            prevBtn.addEventListener('click', () => {
+                if (this.currentStep > 1) {
+                    this.showQuestion(this.currentStep - 1);
                 }
             });
         }
     }
     
-    // Расчет результата
-    function calculateResult() {
-        // Простой расчет цены
+    calculate() {
+        // Базовая цена из первого вопроса
         let basePrice = 7500;
+        const projectType = this.answers.projectType;
         
-        if (config.answers.question1?.id === 'ai-bot') basePrice = 12500;
-        if (config.answers.question1?.id === 'website') basePrice = 15000;
-        if (config.answers.question1?.id === 'mini-app') basePrice = 25000;
+        if (projectType?.id === 'ai-bot') basePrice = 12500;
+        if (projectType?.id === 'website') basePrice = 15000;
+        if (projectType?.id === 'mini-app') basePrice = 25000;
         
-        // Множители
-        if (config.answers.question3?.id === 'medium') basePrice *= 1.5;
-        if (config.answers.question3?.id === 'complex') basePrice *= 2;
+        // Применяем множители
+        let totalPrice = basePrice;
+        if (this.answers.integrations) totalPrice *= this.answers.integrations.multiplier;
+        if (this.answers.complexity) totalPrice *= this.answers.complexity.multiplier;
+        if (this.answers.deadline) totalPrice *= this.answers.deadline.multiplier;
         
-        if (config.answers.question4?.id === 'fast') basePrice *= 1.3;
-        if (config.answers.question4?.id === 'very-fast') basePrice *= 1.5;
+        // Округляем
+        totalPrice = Math.round(totalPrice / 500) * 500;
+        const minPrice = Math.round(totalPrice * 0.85);
+        const maxPrice = Math.round(totalPrice * 1.15);
         
-        // Округление
-        basePrice = Math.round(basePrice / 500) * 500;
-        
-        // Сохраняем данные расчета
-        config.calculationData = {
-            projectType: config.answers.question1?.text || '—',
-            integrations: config.answers.question2?.text || '—',
-            complexity: config.answers.question3?.text || '—',
-            deadline: config.answers.question4?.text || '—',
-            totalPrice: basePrice,
-            minPrice: Math.round(basePrice * 0.85),
-            maxPrice: Math.round(basePrice * 1.15),
-            timeline: {
-                planning: '3-5 дней',
-                development: '7-14 дней',
-                testing: '2-3 дня',
-                total: '12-22 дня'
-            }
+        // Сохраняем расчет
+        this.calculationResult = {
+            projectType: projectType?.text || '—',
+            integrations: this.answers.integrations?.text || '—',
+            complexity: this.answers.complexity?.text || '—',
+            deadline: this.answers.deadline?.text || '—',
+            totalPrice: totalPrice,
+            minPrice: minPrice,
+            maxPrice: maxPrice
         };
         
-        // Обновляем отображение
-        document.getElementById('resultType').textContent = config.calculationData.projectType;
-        document.getElementById('resultIntegrations').textContent = config.calculationData.integrations;
-        document.getElementById('resultComplexity').textContent = config.calculationData.complexity;
-        document.getElementById('resultDeadline').textContent = config.calculationData.deadline;
-        
-        document.getElementById('timelinePlanning').textContent = config.calculationData.timeline.planning;
-        document.getElementById('timelineDevelopment').textContent = config.calculationData.timeline.development;
-        document.getElementById('timelineTesting').textContent = config.calculationData.timeline.testing;
-        
-        document.getElementById('priceAmount').textContent = `от ${formatPrice(config.calculationData.totalPrice)} ₽`;
-        document.getElementById('priceRange').textContent = `${formatPrice(config.calculationData.minPrice)} – ${formatPrice(config.calculationData.maxPrice)} ₽`;
-        
         // Показать результат
-        elements.questionContainer.style.display = 'none';
-        elements.resultContainer.style.display = 'block';
-        
-        // Прокрутить к результату
-        elements.resultContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        this.showResult();
     }
     
-    // Форматирование цены
-    function formatPrice(price) {
+    showResult() {
+        const calc = this.calculationResult;
+        
+        document.getElementById('resultType').textContent = calc.projectType;
+        document.getElementById('resultIntegrations').textContent = calc.integrations;
+        document.getElementById('resultComplexity').textContent = calc.complexity;
+        document.getElementById('resultDeadline').textContent = calc.deadline;
+        
+        document.getElementById('priceAmount').textContent = `от ${this.formatPrice(calc.totalPrice)} ₽`;
+        document.getElementById('priceRange').textContent = `${this.formatPrice(calc.minPrice)} – ${this.formatPrice(calc.maxPrice)} ₽`;
+        
+        this.elements.questionContainer.style.display = 'none';
+        this.elements.resultContainer.style.display = 'block';
+        this.elements.resultContainer.scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    formatPrice(price) {
         return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
     }
     
-    // Настройка обработчиков
-    function setupEventListeners() {
-        // Кнопка сброса
-        if (elements.resetButton) {
-            elements.resetButton.addEventListener('click', function() {
-                config.answers = {};
-                config.calculationData = {};
-                config.currentStep = 1;
-                
-                if (elements.calculatorContactForm) {
-                    elements.calculatorContactForm.reset();
-                }
-                
-                showQuestion(1);
+    setupEventListeners() {
+        // Сброс калькулятора
+        if (this.elements.resetButton) {
+            this.elements.resetButton.addEventListener('click', () => {
+                this.currentStep = 1;
+                this.answers = {};
+                this.showQuestion(1);
                 document.getElementById('calculator').scrollIntoView({ behavior: 'smooth' });
             });
         }
         
         // Форма калькулятора
-        if (elements.calculatorContactForm) {
-            elements.calculatorContactForm.addEventListener('submit', async function(e) {
+        if (this.elements.calculatorForm) {
+            this.elements.calculatorForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
-                // Простая валидация
-                const name = document.getElementById('calcName');
-                const phone = document.getElementById('calcPhone');
-                const privacyCheckbox = document.getElementById('calcPrivacyPolicy');
+                const name = document.getElementById('calcName').value.trim();
+                const phone = document.getElementById('calcPhone').value.trim();
+                const privacy = document.getElementById('calcPrivacyPolicy').checked;
                 
-                if (!name.value.trim() || !phone.value.trim()) {
-                    alert('Пожалуйста, заполните обязательные поля');
+                if (!name || !phone) {
+                    alert('Заполните имя и телефон');
                     return;
                 }
                 
-                if (!privacyCheckbox.checked) {
-                    alert('Пожалуйста, примите политику конфиденциальности');
+                if (!privacy) {
+                    alert('Примите политику конфиденциальности');
                     return;
                 }
                 
-                // Показать индикатор загрузки
-                const submitBtn = elements.submitCalculatorForm;
+                const submitBtn = document.getElementById('submitCalculatorForm');
                 const originalText = submitBtn.innerHTML;
                 submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Отправка...';
                 submitBtn.disabled = true;
                 
                 try {
                     const formData = {
-                        name: name.value.trim(),
-                        phone: phone.value.trim(),
+                        name: name,
+                        phone: phone,
                         email: document.getElementById('calcEmail')?.value.trim() || null,
                         comment: document.getElementById('calcComment')?.value.trim() || null,
-                        calculation: config.calculationData
+                        calculation: this.calculationResult
                     };
                     
-                    console.log('📤 Отправка данных:', formData);
+                    console.log('Отправляем данные:', formData);
                     
                     const response = await fetch('/api/calculator/submit', {
                         method: 'POST',
@@ -300,15 +263,74 @@ document.addEventListener('DOMContentLoaded', function() {
                     const result = await response.json();
                     
                     if (result.success) {
-                        alert('✅ Заявка успешно отправлена! Мы свяжемся с вами в ближайшее время.');
-                        elements.calculatorContactForm.reset();
+                        alert('✅ Заявка отправлена! Мы свяжемся с вами.');
+                        this.elements.calculatorForm.reset();
                     } else {
-                        throw new Error(result.message || 'Ошибка при отправке');
+                        throw new Error(result.message || 'Ошибка');
                     }
                     
                 } catch (error) {
-                    console.error('❌ Ошибка:', error);
-                    alert('Ошибка при отправке: ' + error.message);
+                    console.error('Ошибка:', error);
+                    alert('Ошибка отправки: ' + error.message);
+                } finally {
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            });
+        }
+        
+        // Обработка контактной формы
+        const contactForm = document.getElementById('contactForm');
+        if (contactForm) {
+            contactForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const name = document.getElementById('name').value.trim();
+                const phone = document.getElementById('phone').value.trim();
+                const privacy = document.getElementById('privacyPolicy').checked;
+                
+                if (!name || !phone) {
+                    alert('Заполните имя и телефон');
+                    return;
+                }
+                
+                if (!privacy) {
+                    alert('Примите политику конфиденциальности');
+                    return;
+                }
+                
+                const submitBtn = contactForm.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Отправка...';
+                submitBtn.disabled = true;
+                
+                try {
+                    const formData = {
+                        name: name,
+                        phone: phone,
+                        message: document.getElementById('message')?.value.trim() || null
+                    };
+                    
+                    console.log('Отправляем контактную форму:', formData);
+                    
+                    const response = await fetch('/api/contact', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData)
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        alert('✅ Заявка отправлена! Мы перезвоним.');
+                        contactForm.reset();
+                    } else {
+                        throw new Error(result.message || 'Ошибка');
+                    }
+                    
+                } catch (error) {
+                    console.error('Ошибка:', error);
+                    alert('Ошибка отправки: ' + error.message);
                 } finally {
                     submitBtn.innerHTML = originalText;
                     submitBtn.disabled = false;
@@ -316,7 +338,9 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     }
-    
-    // Запуск калькулятора
-    initCalculator();
+}
+
+// Запуск калькулятора при загрузке страницы
+document.addEventListener('DOMContentLoaded', () => {
+    window.calculator = new Calculator();
 });
