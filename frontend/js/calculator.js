@@ -927,7 +927,7 @@ document.addEventListener('DOMContentLoaded', function() {
         elements.resultContainer.classList.add('fade-in');
     }
 
-    // ============================================
+        // ============================================
     // ОТПРАВКА ФОРМЫ КАЛЬКУЛЯТОРА (ИСПРАВЛЕННАЯ)
     // ============================================
     function setupCalculatorFormListener() {
@@ -1012,73 +1012,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 submitBtn.disabled = false;
             }
         });
-    }
-
-    function validateCalculatorForm() {
-        const name = document.getElementById('calcName');
-        const phone = document.getElementById('calcPhone');
-        const privacy = document.getElementById('calcPrivacyPolicy');
-        
-        let isValid = true;
-        
-        // Очистить предыдущие ошибки
-        clearFieldError(name);
-        clearFieldError(phone);
-        
-        // Валидация имени
-        if (!name.value.trim()) {
-            showFieldError(name, 'Введите ваше имя');
-            isValid = false;
-        }
-        
-        // Валидация телефона
-        const phoneRegex = /^\+7\s\(\d{3}\)\s\d{3}-\d{2}-\d{2}$/;
-        if (!phone.value.trim()) {
-            showFieldError(phone, 'Введите номер телефона');
-            isValid = false;
-        } else if (!phoneRegex.test(phone.value)) {
-            showFieldError(phone, 'Введите телефон в формате: +7 (XXX) XXX-XX-XX');
-            isValid = false;
-        }
-        
-        // Валидация согласия
-        if (!privacy.checked) {
-            showNotification('Необходимо согласие на обработку персональных данных', 'warning');
-            isValid = false;
-        }
-        
-        return isValid;
-    }
-
-    function showFieldError(field, message) {
-        field.classList.add('error');
-        
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'field-error';
-        errorDiv.textContent = message;
-        errorDiv.style.cssText = `
-            color: #dc3545;
-            font-size: 0.85rem;
-            margin-top: 5px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        `;
-        
-        const errorIcon = document.createElement('i');
-        errorIcon.className = 'fas fa-exclamation-circle';
-        
-        errorDiv.prepend(errorIcon);
-        field.parentNode.appendChild(errorDiv);
-    }
-
-    function clearFieldError(field) {
-        field.classList.remove('error');
-        
-        const existingError = field.parentNode.querySelector('.field-error');
-        if (existingError) {
-            existingError.remove();
-        }
     }
 
     // ============================================
