@@ -1,13 +1,13 @@
 /**
  * MakeBot Backend Server
- * Версия 2.2 (без Telegram) - ИСПРАВЛЕННЫЙ
+ * Версия 2.3 (только Telegram) - ИСПРАВЛЕННЫЙ
  */
 
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-const nodemailer = require('nodemailer');
+const TelegramBot = require('node-telegram-bot-api');
 require('dotenv').config();
 
 const app = express();
@@ -18,310 +18,173 @@ const PORT = process.env.PORT || 3000;
 // ============================================
 const config = {
     name: 'MakeBot API',
-    version: '2.2.0',
+    version: '2.3.0',
     contact: {
-        email: 'support@makebot.shop',
-        phone: '+7 (925) 151-58-31',
-        adminEmail: process.env.ADMIN_EMAIL || 'Denis.Kenway@yandex.ru'
+        phone: '+7 (925) 151-58-31'
     }
 };
 
 // ============================================
-// НАСТРОЙКА ПОЧТЫ (ИСПРАВЛЕННЫЙ)
+// НАСТРОЙКА TELEGRAM (ИСПРАВЛЕННЫЙ)
 // ============================================
-function createEmailTransporter() {
+let telegramBot = null;
+
+function initializeTelegramBot() {
     try {
-        console.log('🔧 Настройка SMTP транспортера...');
-        console.log('   Хост:', process.env.SMTP_HOST);
-        console.log('   Порт:', process.env.SMTP_PORT);
-        console.log('   Пользователь:', process.env.SMTP_USER);
-        console.log('   Админ email:', process.env.ADMIN_EMAIL);
+        const token = process.env.TELEGRAM_BOT_TOKEN;
+        const chatId = process.env.TELEGRAM_CHAT_ID;
         
-        // Проверяем наличие всех необходимых переменных
-        if (!process.env.SMTP_USER || !process.env.SMTP_PASS || !process.env.ADMIN_EMAIL) {
-            console.error('❌ Не все SMTP переменные окружения установлены');
-            console.error('   SMTP_USER:', !!process.env.SMTP_USER);
-            console.error('   SMTP_PASS:', !!process.env.SMTP_PASS);
-            console.error('   ADMIN_EMAIL:', !!process.env.ADMIN_EMAIL);
+        if (!token || !chatId) {
+            console.error('❌ Отсутствуют переменные Telegram');
+            console.error('   TELEGRAM_BOT_TOKEN:', !!token);
+            console.error('   TELEGRAM_CHAT_ID:', !!chatId);
             return null;
         }
-
-        const transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST || 'smtp.mail.ru',
-            port: parseInt(process.env.SMTP_PORT) || 465,
-            secure: true,
-            auth: {
-                user: process.env.SMTP_USER,
-                pass: process.env.SMTP_PASS
-            },
-            tls: {
-                rejectUnauthorized: false
-            }
+        
+        console.log('🤖 Инициализация Telegram бота...');
+        console.log('   Токен:', token.substring(0, 10) + '...');
+        console.log('   Чат ID:', chatId);
+        
+        const bot = new TelegramBot(token, { polling: false });
+        console.log('✅ Telegram бот инициализирован');
+        
+        // Проверка доступности бота
+        bot.getMe().then(me => {
+            console.log(`✅ Бот @${me.username} готов к работе`);
+        }).catch(error => {
+            console.error('❌ Ошибка доступа к боту:', error.message);
         });
         
-        // Проверяем подключение
-        transporter.verify(function(error, success) {
-            if (error) {
-                console.error('❌ Ошибка проверки SMTP подключения:', error.message);
-            } else {
-                console.log('✅ SMTP сервер готов принимать письма');
-            }
-        });
-        
-        console.log('✅ SMTP транспортер создан');
-        return transporter;
+        return bot;
     } catch (error) {
-        console.error('❌ Ошибка создания SMTP транспортера:', error.message);
+        console.error('❌ Ошибка инициализации Telegram бота:', error.message);
         return null;
     }
 }
 
-const emailTransporter = createEmailTransporter();
+telegramBot = initializeTelegramBot();
 
-// Генерация HTML для писем с калькулятора
-function generateCalculatorEmail(data) {
-    const calculation = data.calculation;
-    
-    return `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; }
-        .header { background: linear-gradient(135deg, #4361ee, #7209b7); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-        .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
-        .section { margin-bottom: 25px; }
-        .section-title { color: #4361ee; font-weight: bold; font-size: 18px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #eef2ff; }
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .info-item { margin-bottom: 12px; }
-        .info-label { font-weight: bold; color: #666; font-size: 14px; }
-        .calculation-box { background: white; padding: 20px; border-radius: 8px; border: 2px solid #eef2ff; margin: 20px 0; }
-        .price { font-size: 32px; font-weight: bold; color: #4361ee; text-align: center; margin: 20px 0; }
-        .timeline { background: #eef2ff; padding: 15px; border-radius: 8px; }
-        .timeline-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #d1d9ff; }
-        .timeline-item:last-child { border-bottom: none; }
-        .comment { background: #fff3cd; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #ffc107; }
-        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 12px; }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>🚀 Новая заявка с калькулятора</h1>
-        <p>ID: #${data.id} | ${new Date(data.timestamp).toLocaleString('ru-RU')}</p>
-    </div>
-    
-    <div class="content">
-        <!-- Контактная информация -->
-        <div class="section">
-            <div class="section-title">👤 Контактная информация</div>
-            <div class="info-grid">
-                <div class="info-item">
-                    <div class="info-label">Имя:</div>
-                    <div>${data.name}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Телефон:</div>
-                    <div>${data.phone}</div>
-                </div>
-                ${data.email ? `
-                <div class="info-item">
-                    <div class="info-label">Email:</div>
-                    <div>${data.email}</div>
-                </div>
-                ` : ''}
-                <div class="info-item">
-                    <div class="info-label">IP:</div>
-                    <div>${data.ip}</div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Комментарий -->
-        ${data.comment ? `
-        <div class="section">
-            <div class="section-title">💬 Комментарий клиента</div>
-            <div class="comment">
-                ${data.comment}
-            </div>
-        </div>
-        ` : ''}
-        
-        <!-- Расчет -->
-        <div class="section">
-            <div class="section-title">📊 Расчет стоимости</div>
-            <div class="calculation-box">
-                <div class="info-grid">
-                    <div class="info-item">
-                        <div class="info-label">Тип проекта:</div>
-                        <div>${calculation.projectType}</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">Платформы:</div>
-                        <div>${calculation.platforms}</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">Интеграции:</div>
-                        <div>${calculation.integrations}</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">Сложность:</div>
-                        <div>${calculation.complexity}</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">Срочность:</div>
-                        <div>${calculation.deadline}</div>
-                    </div>
-                </div>
-                
-                <div class="price">
-                    ${calculation.totalPrice.toLocaleString('ru-RU')} ₽
-                </div>
-                
-                <div style="text-align: center; color: #666; margin-bottom: 20px;">
-                    Диапазон: ${calculation.minPrice.toLocaleString('ru-RU')} – ${calculation.maxPrice.toLocaleString('ru-RU')} ₽
-                </div>
-                
-                <div class="timeline">
-                    <div class="section-title" style="font-size: 16px; margin-top: 0;">📅 Сроки разработки</div>
-                    <div class="timeline-item">
-                        <span>Проектирование:</span>
-                        <strong>${calculation.timeline.planning}</strong>
-                    </div>
-                    <div class="timeline-item">
-                        <span>Разработка:</span>
-                        <strong>${calculation.timeline.development}</strong>
-                    </div>
-                    <div class="timeline-item">
-                        <span>Тестирование:</span>
-                        <strong>${calculation.timeline.testing}</strong>
-                    </div>
-                    <div class="timeline-item" style="border-top: 2px solid #4361ee; padding-top: 15px; margin-top: 10px; font-weight: bold;">
-                        <span>Общий срок:</span>
-                        <span style="color: #4361ee;">${calculation.timeline.total}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Футер -->
-        <div class="footer">
-            <p>📧 Это автоматическое письмо с сайта MakeBot</p>
-            <p>🕐 ${new Date(data.timestamp).toLocaleString('ru-RU')}</p>
-            <p>📍 IP: ${data.ip}</p>
-        </div>
-    </div>
-</body>
-</html>
-    `;
-}
+// ============================================
+// ФУНКЦИИ ОТПРАВКИ В TELEGRAM
+// ============================================
 
-// Генерация HTML для контактных заявок
-function generateContactEmail(data) {
-    return `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; }
-        .header { background: linear-gradient(135deg, #4361ee, #7209b7); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-        .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
-        .section { margin-bottom: 25px; }
-        .section-title { color: #4361ee; font-weight: bold; font-size: 18px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #eef2ff; }
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .info-item { margin-bottom: 12px; }
-        .info-label { font-weight: bold; color: #666; font-size: 14px; }
-        .message { background: #fff3cd; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #ffc107; }
-        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 12px; }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>📞 Новая контактная заявка</h1>
-        <p>ID: #${data.id} | ${new Date(data.timestamp).toLocaleString('ru-RU')}</p>
-    </div>
-    
-    <div class="content">
-        <!-- Контактная информация -->
-        <div class="section">
-            <div class="section-title">👤 Контактная информация</div>
-            <div class="info-grid">
-                <div class="info-item">
-                    <div class="info-label">Имя:</div>
-                    <div>${data.name}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Телефон:</div>
-                    <div>${data.phone}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">IP:</div>
-                    <div>${data.ip}</div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Сообщение -->
-        ${data.message ? `
-        <div class="section">
-            <div class="section-title">💬 Сообщение клиента</div>
-            <div class="message">
-                ${data.message}
-            </div>
-        </div>
-        ` : ''}
-        
-        <!-- Футер -->
-        <div class="footer">
-            <p>📧 Это автоматическое письмо с сайта MakeBot</p>
-            <p>🕐 ${new Date(data.timestamp).toLocaleString('ru-RU')}</p>
-            <p>📍 IP: ${data.ip}</p>
-            <p>🌐 User-Agent: ${(data.userAgent || '').substring(0, 100)}</p>
-        </div>
-    </div>
-</body>
-</html>
-    `;
-}
-
-// Отправка email (ИСПРАВЛЕННАЯ)
-async function sendEmail(subject, html, text) {
-    if (!emailTransporter) {
-        console.warn('⚠️ SMTP транспортер не настроен, письмо не отправлено');
-        return { success: false, error: 'SMTP не настроен' };
+// Отправка заявки с калькулятора в Telegram
+async function sendCalculatorToTelegram(data) {
+    if (!telegramBot) {
+        console.warn('⚠️ Telegram бот не настроен, заявка не отправлена');
+        return { success: false, error: 'Telegram не настроен' };
     }
     
     try {
-        console.log('📤 Отправка письма...');
-        console.log('   От:', process.env.SMTP_USER);
-        console.log('   Кому:', process.env.ADMIN_EMAIL);
-        console.log('   Тема:', subject);
+        const chatId = process.env.TELEGRAM_CHAT_ID;
+        const calculation = data.calculation;
         
-        const mailOptions = {
-            from: `"MakeBot" <${process.env.SMTP_USER}>`,
-            to: process.env.ADMIN_EMAIL,
-            subject: subject,
-            html: html,
-            text: text || html.replace(/<[^>]*>/g, '')
-        };
+        // Форматирование сообщения
+        const message = `🚀 *НОВАЯ ЗАЯВКА С КАЛЬКУЛЯТОРА*
         
-        const info = await emailTransporter.sendMail(mailOptions);
-        console.log(`✅ Письмо отправлено: ${info.messageId}`);
-        console.log(`   Ответ сервера: ${info.response}`);
+📋 *Детали заявки:*
+🆔 ID: #${data.id}
+📅 Дата: ${new Date(data.timestamp).toLocaleString('ru-RU')}
+🌐 IP: ${data.ip}
+
+👤 *Контактная информация:*
+👨‍💼 Имя: ${data.name}
+📞 Телефон: ${data.phone}
+📧 Email: ${data.email || 'Не указан'}
+💬 Комментарий: ${data.comment || 'Нет'}
+
+📊 *Параметры проекта:*
+🎯 Тип: ${calculation.projectType}
+📱 Платформы: ${calculation.platforms || '—'}
+🔗 Интеграции: ${calculation.integrations || '—'}
+⚙️ Сложность: ${calculation.complexity}
+⏱️ Срочность: ${calculation.deadline}
+
+💰 *Расчет стоимости:*
+💵 Ориентировочная: *${calculation.totalPrice.toLocaleString('ru-RU')} ₽*
+📈 Диапазон: ${calculation.minPrice.toLocaleString('ru-RU')} – ${calculation.maxPrice.toLocaleString('ru-RU')} ₽
+
+📅 *Сроки разработки:*
+🗓️ Проектирование: ${calculation.timeline.planning}
+🛠️ Разработка: ${calculation.timeline.development}
+🧪 Тестирование: ${calculation.timeline.testing}
+⏰ Общий срок: ${calculation.timeline.total}
+
+📱 User-Agent: ${(data.userAgent || '').substring(0, 100)}`;
         
-        return { 
-            success: true, 
-            messageId: info.messageId,
-            details: info
+        console.log('📤 Отправка заявки в Telegram...');
+        console.log('   Чат ID:', chatId);
+        
+        const result = await telegramBot.sendMessage(chatId, message, {
+            parse_mode: 'Markdown',
+            disable_web_page_preview: true
+        });
+        
+        console.log(`✅ Заявка отправлена в Telegram: ${result.message_id}`);
+        
+        return {
+            success: true,
+            messageId: result.message_id,
+            details: result
         };
         
     } catch (error) {
-        console.error('❌ Ошибка отправки письма:', error.message);
+        console.error('❌ Ошибка отправки в Telegram:', error.message);
         console.error('   Код ошибки:', error.code);
-        console.error('   Команда:', error.command);
-        return { 
-            success: false, 
+        return {
+            success: false,
+            error: error.message,
+            code: error.code
+        };
+    }
+}
+
+// Отправка контактной заявки в Telegram
+async function sendContactToTelegram(data) {
+    if (!telegramBot) {
+        console.warn('⚠️ Telegram бот не настроен, заявка не отправлена');
+        return { success: false, error: 'Telegram не настроен' };
+    }
+    
+    try {
+        const chatId = process.env.TELEGRAM_CHAT_ID;
+        
+        // Форматирование сообщения
+        const message = `📞 *НОВАЯ КОНТАКТНАЯ ЗАЯВКА*
+        
+📋 *Детали заявки:*
+🆔 ID: #${data.id}
+📅 Дата: ${new Date(data.timestamp).toLocaleString('ru-RU')}
+🌐 IP: ${data.ip}
+
+👤 *Контактная информация:*
+👨‍💼 Имя: ${data.name}
+📞 Телефон: ${data.phone}
+💬 Сообщение: ${data.message || 'Нет'}
+
+📱 User-Agent: ${(data.userAgent || '').substring(0, 100)}`;
+        
+        console.log('📤 Отправка контактной заявки в Telegram...');
+        console.log('   Чат ID:', chatId);
+        
+        const result = await telegramBot.sendMessage(chatId, message, {
+            parse_mode: 'Markdown',
+            disable_web_page_preview: true
+        });
+        
+        console.log(`✅ Контактная заявка отправлена в Telegram: ${result.message_id}`);
+        
+        return {
+            success: true,
+            messageId: result.message_id,
+            details: result
+        };
+        
+    } catch (error) {
+        console.error('❌ Ошибка отправки контактной заявки в Telegram:', error.message);
+        console.error('   Код ошибки:', error.code);
+        return {
+            success: false,
             error: error.message,
             code: error.code
         };
@@ -329,16 +192,19 @@ async function sendEmail(subject, html, text) {
 }
 
 // ============================================
-// ПРОВЕРКА ПЕРЕМЕННЫХ ОКРУЖЕНИЯ (ИСПРАВЛЕННАЯ)
+// ПРОВЕРКА ПЕРЕМЕННЫХ ОКРУЖЕНИЯ
 // ============================================
-const requiredEnvVars = ['SMTP_USER', 'SMTP_PASS', 'ADMIN_EMAIL'];
+const requiredEnvVars = ['TELEGRAM_BOT_TOKEN', 'TELEGRAM_CHAT_ID'];
 const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
 if (missingEnvVars.length > 0) {
-    console.warn('⚠️  ВНИМАНИЕ: отсутствуют переменные окружения:', missingEnvVars);
+    console.warn('⚠️  ВНИМАНИЕ: отсутствуют переменные Telegram:', missingEnvVars);
     console.warn('   Отредактируйте файл .env в папке backend/');
+    console.warn('   Пример:');
+    console.warn('   TELEGRAM_BOT_TOKEN=ваш_токен');
+    console.warn('   TELEGRAM_CHAT_ID=ваш_чат_id');
 } else {
-    console.log('✅ Все переменные окружения найдены');
+    console.log('✅ Переменные Telegram найдены');
 }
 
 // ============================================
@@ -386,7 +252,7 @@ app.get('/api/info', (req, res) => {
             version: config.version,
             serverTime: new Date().toISOString(),
             contact: config.contact,
-            emailConfigured: emailTransporter !== null
+            telegramConfigured: telegramBot !== null
         }
     });
 });
@@ -403,7 +269,7 @@ const validateJSON = (req, res, next) => {
     next();
 };
 
-// Обработка заявок с калькулятора (ИСПРАВЛЕННАЯ)
+// Обработка заявок с калькулятора (ИСПРАВЛЕННЫЯ)
 app.post('/api/calculator/submit', validateJSON, async (req, res) => {
     try {
         console.log('📝 Получена заявка с калькулятора');
@@ -442,22 +308,19 @@ app.post('/api/calculator/submit', validateJSON, async (req, res) => {
         requests.push(estimateData);
         fs.writeFileSync(logPath, JSON.stringify(requests, null, 2));
         
-        // Отправляем email
-        let emailResult = null;
+        // Отправляем в Telegram
+        let telegramResult = null;
         try {
-            console.log('📤 Попытка отправки email...');
-            const html = generateCalculatorEmail(estimateData);
-            const text = `Новая заявка с калькулятора\nИмя: ${name}\nТелефон: ${phone}\nEmail: ${email || 'Не указан'}\nПроект: ${calculation.projectType}`;
+            console.log('🤖 Попытка отправки в Telegram...');
+            telegramResult = await sendCalculatorToTelegram(estimateData);
             
-            emailResult = await sendEmail(`🚀 Новая заявка с калькулятора #${estimateData.id}`, html, text);
-            
-            if (emailResult.success) {
-                console.log(`✅ Заявка с калькулятора #${estimateData.id} отправлена на email`);
+            if (telegramResult.success) {
+                console.log(`✅ Заявка с калькулятора #${estimateData.id} отправлена в Telegram`);
             } else {
-                console.error('❌ Ошибка отправки email:', emailResult.error);
+                console.error('❌ Ошибка отправки в Telegram:', telegramResult.error);
             }
-        } catch (emailError) {
-            console.error('❌ Исключение при отправке email:', emailError.message);
+        } catch (telegramError) {
+            console.error('❌ Исключение при отправке в Telegram:', telegramError.message);
         }
         
         res.json({
@@ -468,8 +331,8 @@ app.post('/api/calculator/submit', validateJSON, async (req, res) => {
                 name,
                 phone,
                 email: email || null,
-                emailSent: emailResult?.success || false,
-                emailMessage: emailResult?.success ? 'Отправлено на email' : 'Ошибка отправки email'
+                telegramSent: telegramResult?.success || false,
+                telegramMessage: telegramResult?.success ? 'Отправлено в Telegram' : 'Ошибка отправки в Telegram'
             }
         });
         
@@ -520,22 +383,19 @@ app.post('/api/contact', validateJSON, async (req, res) => {
         contacts.push(contactData);
         fs.writeFileSync(logPath, JSON.stringify(contacts, null, 2));
         
-        // Отправляем email
-        let emailResult = null;
+        // Отправляем в Telegram
+        let telegramResult = null;
         try {
-            console.log('📤 Попытка отправки контактной заявки на email...');
-            const html = generateContactEmail(contactData);
-            const text = `Новая контактная заявка\nИмя: ${name}\nТелефон: ${phone}\nСообщение: ${message || 'Не указано'}`;
+            console.log('🤖 Попытка отправки контактной заявки в Telegram...');
+            telegramResult = await sendContactToTelegram(contactData);
             
-            emailResult = await sendEmail(`📞 Новая контактная заявка #${contactData.id}`, html, text);
-            
-            if (emailResult.success) {
-                console.log(`✅ Контактная заявка #${contactData.id} отправлена на email`);
+            if (telegramResult.success) {
+                console.log(`✅ Контактная заявка #${contactData.id} отправлена в Telegram`);
             } else {
-                console.error('❌ Ошибка отправки контактной заявки на email:', emailResult.error);
+                console.error('❌ Ошибка отправки контактной заявки в Telegram:', telegramResult.error);
             }
-        } catch (emailError) {
-            console.error('❌ Исключение при отправке контактной заявки на email:', emailError.message);
+        } catch (telegramError) {
+            console.error('❌ Исключение при отправке контактной заявки в Telegram:', telegramError.message);
         }
         
         res.json({
@@ -545,8 +405,8 @@ app.post('/api/contact', validateJSON, async (req, res) => {
                 contactId: contactData.id,
                 name,
                 phone,
-                emailSent: emailResult?.success || false,
-                emailMessage: emailResult?.success ? 'Отправлено на email' : 'Ошибка отправки email'
+                telegramSent: telegramResult?.success || false,
+                telegramMessage: telegramResult?.success ? 'Отправлено в Telegram' : 'Ошибка отправки в Telegram'
             }
         });
         
@@ -560,48 +420,60 @@ app.post('/api/contact', validateJSON, async (req, res) => {
     }
 });
 
-// Тестовый endpoint для проверки почты
-app.get('/api/test/email', async (req, res) => {
+// Тестовый endpoint для проверки Telegram
+app.get('/api/test/telegram', async (req, res) => {
     try {
-        console.log('🔧 Тестирование email отправки...');
+        console.log('🤖 Тестирование Telegram...');
         
-        if (!emailTransporter) {
+        if (!telegramBot) {
             return res.json({
                 success: false,
-                message: 'Email не настроен',
+                message: 'Telegram не настроен',
                 env: {
-                    smtpUser: process.env.SMTP_USER ? 'Есть' : 'Нет',
-                    adminEmail: process.env.ADMIN_EMAIL ? 'Есть' : 'Нет'
+                    telegramToken: process.env.TELEGRAM_BOT_TOKEN ? 'Есть' : 'Нет',
+                    telegramChatId: process.env.TELEGRAM_CHAT_ID ? 'Есть' : 'Нет'
                 }
             });
         }
         
-        const html = `
-            <h1>Тестовое письмо от MakeBot</h1>
-            <p>Это тестовое письмо отправлено ${new Date().toLocaleString('ru-RU')}</p>
-            <p>Если вы получили это письмо, значит SMTP настроен правильно.</p>
-            <p><strong>Настройки SMTP:</strong></p>
-            <ul>
-                <li>Хост: ${process.env.SMTP_HOST}</li>
-                <li>Порт: ${process.env.SMTP_PORT}</li>
-                <li>Пользователь: ${process.env.SMTP_USER}</li>
-                <li>Получатель: ${process.env.ADMIN_EMAIL}</li>
-            </ul>
-        `;
+        const testMessage = `🔧 *Тестовое сообщение от MakeBot*
         
-        const result = await sendEmail('🔧 Тестовое письмо от MakeBot', html, 'Тестовое письмо от MakeBot');
+📅 Дата: ${new Date().toLocaleString('ru-RU')}
+✅ Если вы получили это сообщение, значит Telegram настроен правильно.
+
+🤖 Настройки:
+• Бот: готов к работе
+• Чат ID: ${process.env.TELEGRAM_CHAT_ID}
+• Время: ${new Date().toISOString()}`;
         
-        res.json({
-            success: result.success,
-            message: result.success ? 'Тестовое письмо отправлено' : 'Ошибка отправки',
-            result: result
-        });
+        try {
+            const result = await telegramBot.sendMessage(process.env.TELEGRAM_CHAT_ID, testMessage, {
+                parse_mode: 'Markdown'
+            });
+            
+            res.json({
+                success: true,
+                message: 'Тестовое сообщение отправлено в Telegram',
+                result: {
+                    messageId: result.message_id,
+                    chatId: result.chat.id
+                }
+            });
+            
+        } catch (error) {
+            console.error('❌ Ошибка отправки тестового сообщения:', error.message);
+            res.json({
+                success: false,
+                message: 'Ошибка отправки тестового сообщения',
+                error: error.message
+            });
+        }
         
     } catch (error) {
-        console.error('❌ Ошибка тестирования email:', error);
+        console.error('❌ Ошибка тестирования Telegram:', error);
         res.status(500).json({
             success: false,
-            message: 'Ошибка тестирования email',
+            message: 'Ошибка тестирования Telegram',
             error: error.message
         });
     }
@@ -615,7 +487,7 @@ app.get('/api/stats', (req, res) => {
             totalContactRequests: 0,
             todayCalculatorRequests: 0,
             todayContactRequests: 0,
-            emailStatus: emailTransporter !== null
+            telegramStatus: telegramBot !== null
         };
         
         // Чтение из файлов
@@ -664,12 +536,12 @@ app.get('/api/health', (req, res) => {
             status: 'ok',
             timestamp: new Date().toISOString(),
             uptime: process.uptime(),
-            email: emailTransporter !== null,
+            telegram: telegramBot !== null,
             env: missingEnvVars.length > 0 ? `⚠️ Missing: ${missingEnvVars.join(', ')}` : '✅ OK',
             endpoints: {
                 calculator: '/api/calculator/submit',
                 contact: '/api/contact',
-                test: '/api/test/email'
+                test: '/api/test/telegram'
             }
         }
     });
@@ -732,10 +604,9 @@ app.listen(PORT, '0.0.0.0', () => {
     ========================================
     🚀 Сервер запущен на порту: ${PORT}
     🌐 Доступен по адресу: http://0.0.0.0:${PORT}
-    📧 Контакт: ${config.contact.email}
     📞 Телефон: ${config.contact.phone}
-    📨 Email отправка: ${emailTransporter ? '✅ Настроена' : '❌ Не настроена'}
-    ${missingEnvVars.length > 0 ? `⚠️  Отсутствуют: ${missingEnvVars.join(', ')}` : '✅ Все переменные окружения настроены'}
+    🤖 Telegram отправка: ${telegramBot ? '✅ Настроена' : '❌ Не настроена'}
+    ${missingEnvVars.length > 0 ? `⚠️  Отсутствуют: ${missingEnvVars.join(', ')}` : '✅ Все переменные настроены'}
     ========================================
     `);
     
@@ -744,7 +615,7 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log('   GET  /api/info           - информация о сервере');
     console.log('   GET  /api/health         - проверка здоровья');
     console.log('   GET  /api/stats          - статистика заявок');
-    console.log('   GET  /api/test/email     - тест email отправки');
+    console.log('   GET  /api/test/telegram  - тест Telegram отправки');
     console.log('   POST /api/calculator/submit - отправка заявки с калькулятора');
     console.log('   POST /api/contact        - отправка контактной формы');
     console.log('   GET  /                   - главная страница сайта');
