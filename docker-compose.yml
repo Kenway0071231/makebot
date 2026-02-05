@@ -2,7 +2,9 @@ version: '3.8'
 
 services:
   makebot:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile
     container_name: makebot-site
     restart: unless-stopped
     ports:
@@ -11,17 +13,25 @@ services:
       - NODE_ENV=production
       - PORT=3000
       - TZ=Europe/Moscow
+      - HOST=0.0.0.0
     volumes:
       - ./backend/data:/app/data
       - ./frontend:/app/../frontend
       - ./backend/.env:/app/.env
+      - ./logs:/app/logs
+    networks:
+      - makebot-network
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/health', (r) => {if(r.statusCode === 200) process.exit(0); else process.exit(1);})"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-    networks:
-      - makebot-network
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 networks:
   makebot-network:
