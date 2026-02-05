@@ -178,7 +178,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // ============================================
+        // ============================================
     // ВАЛИДАЦИЯ КОНТАКТНОЙ ФОРМЫ (ИСПРАВЛЕННАЯ)
     // ============================================
     function initFormValidation() {
@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('📤 Отправка контактной формы:', formData);
                 
                 // Отправить на сервер (исправленный путь)
-                const response = await fetch('http://93.77.179.64:3000/api/contact', {
+                const response = await fetch('/api/contact', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -264,104 +264,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 clearFieldError(this);
             });
         });
-    }
-    
-    function validateContactForm() {
-        const form = document.getElementById('contactForm');
-        const name = document.getElementById('name');
-        const phone = document.getElementById('phone');
-        const privacy = document.getElementById('privacyPolicy');
-        
-        let isValid = true;
-        
-        // Очистить предыдущие ошибки
-        clearFieldError(name);
-        clearFieldError(phone);
-        
-        // Валидация имени
-        if (!name.value.trim()) {
-            showFieldError(name, 'Введите ваше имя');
-            isValid = false;
-        }
-        
-        // Валидация телефона
-        const phoneRegex = /^\+7\s\(\d{3}\)\s\d{3}-\d{2}-\d{2}$/;
-        if (!phone.value.trim()) {
-            showFieldError(phone, 'Введите номер телефона');
-            isValid = false;
-        } else if (!phoneRegex.test(phone.value)) {
-            showFieldError(phone, 'Введите телефон в формате: +7 (XXX) XXX-XX-XX');
-            isValid = false;
-        }
-        
-        // Валидация согласия
-        if (!privacy.checked) {
-            showNotification('Необходимо согласие на обработку персональных данных', 'warning');
-            isValid = false;
-        }
-        
-        return isValid;
-    }
-    
-    function validateField(field) {
-        let isValid = true;
-        let message = '';
-        
-        // Очистить предыдущие ошибки
-        clearFieldError(field);
-        
-        // Проверка на пустое значение для обязательных полей
-        if (field.hasAttribute('required') && !field.value.trim()) {
-            isValid = false;
-            message = 'Это поле обязательно для заполнения';
-        }
-        
-        // Проверка телефона
-        if (field.type === 'tel' && field.value.trim()) {
-            const phoneRegex = /^\+7\s\(\d{3}\)\s\d{3}-\d{2}-\d{2}$/;
-            if (!phoneRegex.test(field.value)) {
-                isValid = false;
-                message = 'Введите телефон в формате: +7 (XXX) XXX-XX-XX';
-            }
-        }
-        
-        // Если есть ошибка, показать её
-        if (!isValid) {
-            showFieldError(field, message);
-        }
-        
-        return isValid;
-    }
-    
-    function showFieldError(field, message) {
-        field.classList.add('error');
-        
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'field-error';
-        errorDiv.textContent = message;
-        errorDiv.style.cssText = `
-            color: #dc3545;
-            font-size: 0.85rem;
-            margin-top: 5px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        `;
-        
-        const errorIcon = document.createElement('i');
-        errorIcon.className = 'fas fa-exclamation-circle';
-        
-        errorDiv.prepend(errorIcon);
-        field.parentNode.appendChild(errorDiv);
-    }
-    
-    function clearFieldError(field) {
-        field.classList.remove('error');
-        
-        const existingError = field.parentNode.querySelector('.field-error');
-        if (existingError) {
-            existingError.remove();
-        }
     }
     
     // ============================================
