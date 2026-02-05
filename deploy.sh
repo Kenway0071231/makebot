@@ -2,7 +2,7 @@
 
 # ============================================
 # MakeBot Deploy Script
-# Версия: 2.2.0
+# Версия: 2.3.0
 # ============================================
 
 set -e
@@ -39,14 +39,11 @@ check_env_file() {
         if [ -f .env.example ]; then
             cp .env.example .env
             print_success "Файл .env создан из примера"
-            print_warning "⚠️  Обязательно проверьте настройки SMTP в файле .env!"
+            print_warning "⚠️  Обязательно проверьте настройки Telegram в файле .env!"
             echo ""
-            echo "SMTP настройки (проверьте в .env):"
-            echo "  SMTP_HOST=smtp.yandex.ru"
-            echo "  SMTP_PORT=465"
-            echo "  SMTP_USER=support@makebot.store"
-            echo "  SMTP_PASS=Deniska040406"
-            echo "  ADMIN_EMAIL=Denis.Kenway@yandex.ru"
+            echo "Telegram настройки (проверьте в .env):"
+            echo "  TELEGRAM_BOT_TOKEN=8216117039:AAGXvE3XwIfRXO7BBl-rFG2uEcfDEL0dtRM"
+            echo "  TELEGRAM_CHAT_ID=1079922982"
             echo ""
             read -p "Продолжить с текущими настройками? (y/N): " -n 1 -r
             echo
@@ -67,7 +64,7 @@ check_env_file() {
 main() {
     echo
     echo "============================================"
-    echo "       MakeBot Deployment Script v2.2       "
+    echo "       MakeBot Deployment Script v2.3       "
     echo "============================================"
     echo
     
@@ -118,8 +115,9 @@ main() {
         echo "🌐 Откройте в браузере:"
         echo "   http://localhost:3000"
         echo
-        echo "📧 Email для заявок:"
-        echo "   ${ADMIN_EMAIL:-Denis.Kenway@yandex.ru}"
+        echo "🤖 Telegram для заявок:"
+        echo "   Бот: @makebot_support_bot"
+        echo "   Чат ID: 1079922982"
         echo
         echo "🛠️  Команды управления:"
         echo "   Логи:        docker-compose logs -f"
@@ -130,8 +128,8 @@ main() {
         echo "📊 Проверка здоровья сервера:"
         echo "   curl http://localhost:3000/api/health"
         echo
-        echo "📧 Тест отправки email:"
-        echo "   curl http://localhost:3000/api/test/email"
+        echo "🤖 Тест отправки в Telegram:"
+        echo "   curl http://localhost:3000/api/test/telegram"
         echo
         echo "📁 Файлы данных заявок:"
         echo "   backend/data/calculator_requests.json"
