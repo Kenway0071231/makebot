@@ -1,6 +1,5 @@
 /**
- * MakeBot Backend Server
- * Упрощенная рабочая версия
+ * MakeBot Backend Server (рабочая версия)
  */
 
 const express = require('express');
@@ -12,294 +11,209 @@ require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const HOST = process.env.HOST || '0.0.0.0';
 
-// ============================================
-// КОНФИГУРАЦИЯ
-// ============================================
-const config = {
-    name: 'MakeBot API',
-    version: '2.3.0',
-    contact: {
-        phone: process.env.CONTACT_PHONE || '+7 (925) 151-58-31'
+// ==================== НАСТРОЙКА TELEGRAM ====================
+console.log('🤖 Настраиваю Telegram...');
+console.log('Токен:', process.env.TELEGRAM_BOT_TOKEN ? 'Есть' : 'Нет');
+console.log('Чат ID:', process.env.TELEGRAM_CHAT_ID ? 'Есть' : 'Нет');
+
+let bot = null;
+try {
+    if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID) {
+        bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: false });
+        console.log('✅ Telegram бот инициализирован');
+    } else {
+        console.log('⚠️ Telegram токен или чат ID не указаны');
     }
-};
-
-// ============================================
-// НАСТРОЙКА TELEGRAM
-// ============================================
-let telegramBot = null;
-let telegramEnabled = false;
-
-// Проверяем наличие токена
-if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_BOT_TOKEN !== 'ваш_токен_здесь') {
-    try {
-        telegramBot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: false });
-        telegramEnabled = true;
-        console.log('✅ Telegram бот настроен');
-    } catch (error) {
-        console.error('❌ Ошибка настройки Telegram:', error.message);
-    }
-} else {
-    console.warn('⚠️ Telegram не настроен. Установите TELEGRAM_BOT_TOKEN в .env');
+} catch (error) {
+    console.error('❌ Ошибка инициализации Telegram:', error.message);
 }
 
-// ============================================
-// ФУНКЦИИ ОТПРАВКИ В TELEGRAM
-// ============================================
-async function sendToTelegram(message) {
-    if (!telegramEnabled || !telegramBot) {
-        console.warn('⚠️ Telegram не настроен, сообщение не отправлено');
-        return { success: false, error: 'Telegram не настроен' };
-    }
-    
-    try {
-        const chatId = process.env.TELEGRAM_CHAT_ID;
-        const result = await telegramBot.sendMessage(chatId, message, {
-            parse_mode: 'Markdown',
-            disable_web_page_preview: true
-        });
-        
-        console.log(`✅ Сообщение отправлено в Telegram (ID: ${result.message_id})`);
-        return { success: true, messageId: result.message_id };
-        
-    } catch (error) {
-        console.error('❌ Ошибка отправки в Telegram:', error.message);
-        return { success: false, error: error.message };
-    }
-}
-
-// ============================================
-// MIDDLEWARE
-// ============================================
-app.use(cors({
-    origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-}));
-
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// Статические файлы
+// ==================== MIDDLEWARE ====================
+app.use(cors());
+app.use(express.json());
 app.use(express.static(path.join(__dirname, '../frontend')));
 
-// Логирование запросов
+// Логирование
 app.use((req, res, next) => {
-    console.log(`${new Date().toISOString()} - ${req.method} ${req.url} - IP: ${req.ip}`);
+    console.log(`${new Date().toISOString()} ${req.method} ${req.url}`);
     next();
 });
 
-// ============================================
-// МАРШРУТЫ API
-// ============================================
+// ==================== РОУТЫ ====================
 
 // Главная страница
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
-// Информация о сервере
-app.get('/api/info', (req, res) => {
+// Проверка работы
+app.get('/api/health', (req, res) => {
     res.json({
         success: true,
-        data: {
-            name: config.name,
-            version: config.version,
-            serverTime: new Date().toISOString(),
-            contact: config.contact,
-            telegramConfigured: telegramEnabled
-        }
+        status: 'online',
+        time: new Date().toISOString(),
+        telegram: bot !== null
     });
 });
 
-// Обработка заявок с калькулятора
+// Отправка заявки с калькулятора
 app.post('/api/calculator/submit', async (req, res) => {
     try {
-        console.log('📝 Получена заявка с калькулятора');
+        console.log('📝 Получена заявка с калькулятора:', req.body);
         
         const { name, phone, email, comment, calculation } = req.body;
         
-        // Валидация
-        if (!name || !phone || !calculation) {
+        if (!name || !phone) {
             return res.status(400).json({
                 success: false,
-                message: 'Недостаточно данных'
+                message: 'Укажите имя и телефон'
             });
         }
         
-        // Сохраняем данные
-        const estimateData = {
+        // Сохраняем в файл
+        const data = {
             id: Date.now(),
             timestamp: new Date().toISOString(),
-            name: name.trim(),
-            phone: phone.trim(),
-            email: email ? email.trim() : null,
-            comment: comment ? comment.trim() : null,
+            name,
+            phone,
+            email,
+            comment,
             calculation,
-            ip: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-            userAgent: req.get('User-Agent')
+            ip: req.ip
         };
         
-        console.log('📊 Данные заявки сохранены, ID:', estimateData.id);
-        
-        // Сохраняем в файл
-        const logPath = path.join(__dirname, 'data', 'calculator_requests.json');
-        const requests = fs.existsSync(logPath) 
-            ? JSON.parse(fs.readFileSync(logPath, 'utf8'))
-            : [];
-        
-        requests.push(estimateData);
-        fs.writeFileSync(logPath, JSON.stringify(requests, null, 2));
+        const filePath = path.join(__dirname, 'data', 'calculator.json');
+        const allData = fs.existsSync(filePath) ? JSON.parse(fs.readFileSync(filePath, 'utf8')) : [];
+        allData.push(data);
+        fs.writeFileSync(filePath, JSON.stringify(allData, null, 2));
         
         // Отправляем в Telegram
-        let telegramResult = null;
-        if (telegramEnabled) {
-            const message = `🚀 *НОВАЯ ЗАЯВКА С КАЛЬКУЛЯТОРА* \n\n👤 Имя: ${estimateData.name}\n📞 Телефон: ${estimateData.phone}\n📧 Email: ${estimateData.email || 'Не указан'}\n💬 Комментарий: ${estimateData.comment || 'Нет'}\n\n💰 Стоимость: ${estimateData.calculation.totalPrice?.toLocaleString('ru-RU') || '—'} ₽\n📅 Дата: ${new Date(estimateData.timestamp).toLocaleString('ru-RU')}`;
-            
-            telegramResult = await sendToTelegram(message);
+        let telegramResult = { success: false };
+        if (bot) {
+            try {
+                const message = `🚀 *НОВАЯ ЗАЯВКА С КАЛЬКУЛЯТОРА* \n\n👤 *Имя:* ${name}\n📞 *Телефон:* ${phone}\n📧 *Email:* ${email || 'Не указан'}\n💬 *Комментарий:* ${comment || 'Нет'}\n\n💰 *Стоимость:* ${calculation?.totalPrice ? calculation.totalPrice.toLocaleString('ru-RU') + ' ₽' : '—'}\n📅 *Дата:* ${new Date().toLocaleString('ru-RU')}\n🌐 *IP:* ${req.ip || 'Неизвестен'}`;
+                
+                await bot.sendMessage(process.env.TELEGRAM_CHAT_ID, message, {
+                    parse_mode: 'Markdown'
+                });
+                
+                telegramResult = { success: true };
+                console.log('✅ Сообщение отправлено в Telegram');
+            } catch (telegramError) {
+                console.error('❌ Ошибка Telegram:', telegramError.message);
+                telegramResult = { success: false, error: telegramError.message };
+            }
         }
         
         res.json({
             success: true,
-            message: 'Заявка успешно отправлена!',
-            data: {
-                requestId: estimateData.id,
-                telegramSent: telegramResult?.success || false
-            }
+            message: 'Заявка отправлена!',
+            telegram: telegramResult.success
         });
         
     } catch (error) {
-        console.error('❌ Ошибка при обработке заявки:', error);
+        console.error('❌ Ошибка обработки заявки:', error);
         res.status(500).json({
             success: false,
-            message: 'Ошибка при обработке заявки'
+            message: 'Ошибка сервера'
         });
     }
 });
 
-// Обработка контактной формы
+// Контактная форма
 app.post('/api/contact', async (req, res) => {
     try {
-        console.log('📝 Получена контактная заявка');
+        console.log('📞 Получена контактная форма:', req.body);
         
         const { name, phone, message } = req.body;
         
         if (!name || !phone) {
             return res.status(400).json({
                 success: false,
-                message: 'Пожалуйста, заполните обязательные поля'
+                message: 'Укажите имя и телефон'
             });
         }
         
-        // Сохраняем данные
-        const contactData = {
+        // Сохраняем в файл
+        const data = {
             id: Date.now(),
             timestamp: new Date().toISOString(),
-            name: name.trim(),
-            phone: phone.trim(),
-            message: message ? message.trim() : null,
-            ip: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-            userAgent: req.get('User-Agent')
+            name,
+            phone,
+            message,
+            ip: req.ip
         };
         
-        console.log('📊 Контактная заявка сохранена, ID:', contactData.id);
-        
-        // Сохраняем в файл
-        const logPath = path.join(__dirname, 'data', 'contact_requests.json');
-        const contacts = fs.existsSync(logPath) 
-            ? JSON.parse(fs.readFileSync(logPath, 'utf8'))
-            : [];
-        
-        contacts.push(contactData);
-        fs.writeFileSync(logPath, JSON.stringify(contacts, null, 2));
+        const filePath = path.join(__dirname, 'data', 'contact.json');
+        const allData = fs.existsSync(filePath) ? JSON.parse(fs.readFileSync(filePath, 'utf8')) : [];
+        allData.push(data);
+        fs.writeFileSync(filePath, JSON.stringify(allData, null, 2));
         
         // Отправляем в Telegram
-        let telegramResult = null;
-        if (telegramEnabled) {
-            const telegramMessage = `📞 *НОВАЯ КОНТАКТНАЯ ЗАЯВКА* \n\n👤 Имя: ${contactData.name}\n📞 Телефон: ${contactData.phone}\n💬 Сообщение: ${contactData.message || 'Нет'}\n📅 Дата: ${new Date(contactData.timestamp).toLocaleString('ru-RU')}`;
-            
-            telegramResult = await sendToTelegram(telegramMessage);
+        let telegramResult = { success: false };
+        if (bot) {
+            try {
+                const telegramMessage = `📞 *НОВАЯ КОНТАКТНАЯ ЗАЯВКА* \n\n👤 *Имя:* ${name}\n📞 *Телефон:* ${phone}\n💬 *Сообщение:* ${message || 'Нет'}\n📅 *Дата:* ${new Date().toLocaleString('ru-RU')}\n🌐 *IP:* ${req.ip || 'Неизвестен'}`;
+                
+                await bot.sendMessage(process.env.TELEGRAM_CHAT_ID, telegramMessage, {
+                    parse_mode: 'Markdown'
+                });
+                
+                telegramResult = { success: true };
+                console.log('✅ Контактная заявка отправлена в Telegram');
+            } catch (telegramError) {
+                console.error('❌ Ошибка Telegram:', telegramError.message);
+                telegramResult = { success: false, error: telegramError.message };
+            }
         }
         
         res.json({
             success: true,
-            message: 'Заявка успешно отправлена!',
-            data: {
-                contactId: contactData.id,
-                telegramSent: telegramResult?.success || false
-            }
+            message: 'Заявка отправлена!',
+            telegram: telegramResult.success
         });
         
     } catch (error) {
-        console.error('❌ Ошибка при обработке контактной формы:', error);
+        console.error('❌ Ошибка обработки формы:', error);
         res.status(500).json({
             success: false,
-            message: 'Ошибка при отправке заявки'
+            message: 'Ошибка сервера'
         });
     }
 });
 
-// Тестовый endpoint для проверки Telegram
+// Тест Telegram
 app.get('/api/test/telegram', async (req, res) => {
     try {
-        if (!telegramEnabled) {
+        if (!bot) {
             return res.json({
                 success: false,
-                message: 'Telegram не настроен',
-                status: 'not_configured'
+                message: 'Telegram не настроен'
             });
         }
         
-        const testMessage = `🔧 *Тестовое сообщение от MakeBot* \n\n📅 ${new Date().toLocaleString('ru-RU')}\n✅ Telegram настроен правильно!`;
+        const testMessage = `🔧 *Тест MakeBot* \n\n✅ Система работает!\n📅 ${new Date().toLocaleString('ru-RU')}\n🚀 Заявки будут приходить в этот чат`;
         
-        const result = await sendToTelegram(testMessage);
+        await bot.sendMessage(process.env.TELEGRAM_CHAT_ID, testMessage, {
+            parse_mode: 'Markdown'
+        });
         
         res.json({
-            success: result.success,
-            message: result.success ? 'Тестовое сообщение отправлено' : 'Ошибка отправки',
-            result: result
+            success: true,
+            message: 'Тестовое сообщение отправлено!'
         });
         
     } catch (error) {
+        console.error('❌ Тест Telegram:', error);
         res.status(500).json({
             success: false,
-            message: 'Ошибка тестирования Telegram',
-            error: error.message
+            message: 'Ошибка: ' + error.message
         });
     }
 });
 
-// Проверка здоровья сервера
-app.get('/api/health', (req, res) => {
-    res.json({
-        success: true,
-        data: {
-            status: 'ok',
-            timestamp: new Date().toISOString(),
-            uptime: process.uptime(),
-            telegram: telegramEnabled,
-            endpoints: {
-                calculator: '/api/calculator/submit',
-                contact: '/api/contact',
-                test: '/api/test/telegram'
-            }
-        }
-    });
-});
-
-// ============================================
-// ОБРАБОТКА ОШИБОК
-// ============================================
-
-// 404 - Not Found
-app.use((req, res) => {
-    res.status(404).sendFile(path.join(__dirname, '../frontend/index.html'));
-});
-
-// ============================================
-// ЗАПУСК СЕРВЕРА
-// ============================================
+// ==================== ЗАПУСК СЕРВЕРА ====================
 
 // Создаем папку для данных
 const dataDir = path.join(__dirname, 'data');
@@ -307,15 +221,22 @@ if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
 }
 
-// Запуск сервера
-app.listen(PORT, HOST, () => {
+// Проверяем файлы данных
+['calculator.json', 'contact.json'].forEach(file => {
+    const filePath = path.join(dataDir, file);
+    if (!fs.existsSync(filePath)) {
+        fs.writeFileSync(filePath, '[]');
+    }
+});
+
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`
     ========================================
-    MakeBot Server v${config.version}
+    🚀 MakeBot Server запущен!
     ========================================
-    🚀 Сервер запущен на: ${HOST}:${PORT}
-    📞 Телефон: ${config.contact.phone}
-    🤖 Telegram: ${telegramEnabled ? '✅ Настроен' : '❌ Не настроен'}
+    🔗 http://0.0.0.0:${PORT}
+    🤖 Telegram: ${bot ? '✅ Настроен' : '❌ Не настроен'}
+    📅 ${new Date().toLocaleString('ru-RU')}
     ========================================
     `);
 });
