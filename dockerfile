@@ -8,6 +8,9 @@ COPY backend/package*.json ./
 # Устанавливаем зависимости
 RUN npm ci --only=production
 
+# Устанавливаем дополнительно node-telegram-bot-api
+RUN npm install node-telegram-bot-api@0.64.0
+
 # Копируем бэкенд
 COPY backend/ ./
 
