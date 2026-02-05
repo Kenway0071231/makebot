@@ -1,6 +1,6 @@
 {
   "name": "makebot-backend",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Backend для сайта MakeBot - разработка чат-ботов, ИИ решений и сайтов",
   "main": "server.js",
   "scripts": {
@@ -11,22 +11,23 @@
     "docker:build": "docker build -t makebot .",
     "docker:run": "docker run -p 3000:3000 makebot",
     "env:check": "node -e \"const fs = require('fs'); if(!fs.existsSync('.env')) { console.log('⚠️  Файл .env отсутствует!'); console.log('   Скопируйте .env.example в .env и заполните настройки'); process.exit(1); } console.log('✅ Файл .env найден');\"",
-    "test:email": "node -e \"const nodemailer = require('nodemailer'); const transporter = nodemailer.createTransport({ host: process.env.SMTP_HOST || 'smtp.yandex.ru', port: parseInt(process.env.SMTP_PORT) || 465, secure: true, auth: { user: process.env.SMTP_USER || 'support@makebot.store', pass: process.env.SMTP_PASS || 'Deniska040406' } }); transporter.verify(function(error, success) { if (error) { console.log('❌ Ошибка SMTP:', error.message); process.exit(1); } else { console.log('✅ SMTP настроен корректно'); process.exit(0); } });\""
+    "test:telegram": "node -e \"const TelegramBot = require('node-telegram-bot-api'); const token = process.env.TELEGRAM_BOT_TOKEN; const chatId = process.env.TELEGRAM_CHAT_ID; if (!token || !chatId) { console.log('❌ Переменные Telegram не установлены'); process.exit(1); } const bot = new TelegramBot(token, {polling: false}); bot.getMe().then(me => { console.log('✅ Бот доступен:', me.username); console.log('📱 ID чата:', chatId); const testMsg = '🔧 Тестовое сообщение от MakeBot\\\\n📅 ' + new Date().toLocaleString(); bot.sendMessage(chatId, testMsg).then(() => { console.log('✅ Тестовое сообщение отправлено'); process.exit(0); }).catch(err => { console.log('❌ Ошибка отправки:', err.message); process.exit(1); }); }).catch(err => { console.log('❌ Ошибка доступа к боту:', err.message); process.exit(1); });\""
   },
   "keywords": [
     "chatbot",
     "ai",
     "website",
     "development",
-    "automation"
+    "automation",
+    "telegram"
   ],
-  "author": "MakeBot Team <support@makebot.shop>",
+  "author": "MakeBot Team",
   "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "nodemailer": "^6.9.7"
+    "node-telegram-bot-api": "^0.64.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
